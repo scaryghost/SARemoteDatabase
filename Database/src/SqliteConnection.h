@@ -3,10 +3,7 @@
 
 #include "Database/Connection.h"
 #include "CppUtilities/Logging/Logger.h"
-
-extern "C" {
-    #include "sqlite3.h"
-}
+#include "sqlite3.h"
 
 namespace etsai {
 namespace saremotedatabase {
