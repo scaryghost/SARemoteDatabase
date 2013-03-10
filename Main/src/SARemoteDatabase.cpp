@@ -1,3 +1,4 @@
+#include "CppUtilities/Cli/cli.h"
 #include "CppUtilities/Network/ServerSocket.h"
 #include "CppUtilities/Network/Socket.h"
 
@@ -21,9 +22,24 @@ void handler(shared_ptr<Socket> socket) {
 }
 
 int main(int argc, char **argv) {
-    int port= atoi(argv[1]);
-    ServerSocket server(port);
+    ServerSocket server;
+    int port;
+    string dbName;
 
+    CliBuilder *cli= CliBuilder::getBuilder();
+    (*cli).addOption(Option("-tcpport", 0, 1, [&port](const Arguments &args) -> void {
+        port= args.asInteger(0);
+    }).withArgName("number").withDescription("TPC port to listen on for requests").withRequired(true))
+    .addOption(Option("-database", 0, 1, [&dbName](const Arguments &args) -> void {
+        dbName= args.asString(0);
+    }).withArgName("name").withDescription("Database storing achievement information").withRequired(true))
+    .addOption(Option("-h", [&cli](const Arguments &args) -> void {
+        cli->displayUsage();
+    }).withLongOpt("--help").withDescription("Displays this help message and exits"))
+    .setUsage("saremotedatabase -database <name> -tcpport <number> [options]");
+    cli->parse(argc, argv);
+
+    server.bind(port);
     cout << "Listening on port: " << port << endl;
     while(true) {
         shared_ptr<Socket> client= server.accept();
