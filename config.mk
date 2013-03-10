@@ -7,6 +7,6 @@ BIN=saremotedatabase
 CPP_FLAGS=-std=c++0x -Werror -Wall
 
 SRCS:=$(MAIN)
-INC_DIRS:=.
-LIB_DIRS:=CppUtilities/dist
-LIB_NAMES:=cpputilities
+INC_DIRS:=. /mnt/hdd2/local/share/include
+LIB_DIRS:=CppUtilities/dist /mnt/hdd2/local/share/lib
+LIB_NAMES:=pthread dl cpputilities sqlite3
