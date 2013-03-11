@@ -113,7 +113,7 @@ void handler(shared_ptr<Socket> socket) {
                 break;
         }
         response.setType(Message::RESPONSE).setStatus(status).setBody(body).setId(request.getId());
-        socket->write(response.toString());
+        socket->write(response.toString() + "\n");
         logger->log(Level::INFO, "response: " + response.toString());
     }
     socket->close();
