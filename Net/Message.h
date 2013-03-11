@@ -30,11 +30,13 @@ public:
     Message& setRequest(Request request);
     Message& setStatus(int status);
     Message& setBody(const string& body);
+    Message& setId(int id);
 
     Type getType() const;
     Request getRequest() const;
     const string& getBody() const;
     int getStatus() const;
+    int getId() const;
     string toString() const;
 
     static const string PROTOCOL;
@@ -45,6 +47,7 @@ private:
     Request request;
     int status;
     string body;
+    int id;
 };
 
 }   //namespace saremotedatabase

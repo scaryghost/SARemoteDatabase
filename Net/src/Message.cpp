@@ -25,18 +25,18 @@ Message Message::parse(const string& msg) {
     
     if (header[2] == "request") {
         type= REQUEST;
-        if (parts[1] == "connect") {
+        if (parts[2] == "connect") {
             request= CONNECT;
-        } else if (parts[1] == "save") {
+        } else if (parts[2] == "save") {
             request= SAVE;
-        } else if (parts[1] == "retrieve") {
+        } else if (parts[2] == "retrieve") {
             request= RETRIEVE;
         }
     } else if (header[2] == "response") {
         type= RESPONSE;
-        status= atoi(parts[1].c_str());
+        status= atoi(parts[2].c_str());
     }
-    msgObj.setType(type).setRequest(request).setStatus(status).setBody(parts[2]);
+    msgObj.setType(type).setRequest(request).setStatus(status).setBody(parts[3]).setId(atoi(parts[1].c_str()));
     return msgObj;
 }
 
@@ -64,6 +64,11 @@ Message& Message::setBody(const string& body) {
     return *this;
 }
 
+Message& Message::setId(int id) {
+    this->id= id;
+    return *this;
+}
+
 Message::Type Message::getType() const {
     return type;
 }
@@ -80,12 +85,16 @@ int Message::getStatus() const {
     return status;
 }
 
+int Message::getId() const {
+    return id;
+}
+
 string Message::toString() const {
     stringstream msgStr;
 
     msgStr << PROTOCOL << "," << VERSION << ",";
     if (type == REQUEST) {
-        msgStr << "request|";
+        msgStr << "request|" << id << "|";
         if (request == CONNECT) {
             msgStr << "connect";
         } else if (request == SAVE) {
@@ -94,7 +103,7 @@ string Message::toString() const {
             msgStr << "retrieve";
         }
     } else if (type == RESPONSE) {
-        msgStr << "response|" << status;
+        msgStr << "response|" << id << "|" << status;
     }
     if (!body.empty()) {  
         msgStr << "|" << body;
