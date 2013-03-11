@@ -96,7 +96,9 @@ string Message::toString() const {
     } else if (type == RESPONSE) {
         msgStr << "response|" << status;
     }
-    msgStr << "|" << body;
+    if (!body.empty()) {  
+        msgStr << "|" << body;
+    }
     return msgStr.str();
 }
 

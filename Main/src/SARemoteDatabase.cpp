@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     }).withArgName("url").withDescription("URL to the database storing achievement information").withRequired(true))
     .addOption(Option("-passwd", 0, 1, [](const Arguments &args) -> void {
         password= args.asString(0);
-    }).withArgName("value").withDescription("Password for connecting to the server"))
+    }).withArgName("value").withDescription("Password for connecting to the server").withRequired(true))
     .addOption(Option("-h", [&cli](const Arguments &args) -> void {
         cli->displayUsage();
     }).withLongOpt("--help").withDescription("Displays this help message and exits"))
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     .addOption(Option("-dbpwd", 0, 1, [](const Arguments &args) -> void {
         dbPasswd= args.asString(0);
     }).withArgName("password").withDescription("Password for logging into the database"))
-    .setUsage("saremotedatabase -dburl <url> -tcpport <number> [options]");
+    .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <value> [options]");
     cli->parse(argc, argv);
 
     logger->addHandler(new ConsoleHandler());
@@ -81,8 +81,10 @@ void handler(shared_ptr<Socket> socket) {
     
     while(validConnection && (line= socket->readLine()) != "") {
         vector<string> bodyParts;
-        string data;
+        string body;
+        int status;
         Message request, response;
+
         logger->log(Level::INFO, "request: " + line);
         request= Message::parse(line);
 
@@ -90,24 +92,27 @@ void handler(shared_ptr<Socket> socket) {
             case Message::CONNECT:
                 if (request.getBody() != password) {
                     validConnection= false;
-                    data= "Invalid password";
+                    body= "Invalid password";
+                    status= 1;
                 } else {
-                    data= "ok";
+                    status= 0;
                 }
                 
                 break;
             case Message::RETRIEVE:
                 bodyParts= utility::split(request.getBody(), '.');
-                data= dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
+                body= dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
+                status= 0;
                 break;
             case Message::SAVE:
                 bodyParts= utility::split(request.getBody(), '.');
                 dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
+                status= 0;
                 break;
             default:
                 break;
         }
-        response.setType(Message::RESPONSE).setStatus(0).setBody(data);
+        response.setType(Message::RESPONSE).setStatus(status).setBody(body);
         socket->write(response.toString());
         logger->log(Level::INFO, "response: " + response.toString());
     }
