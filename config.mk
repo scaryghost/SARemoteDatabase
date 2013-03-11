@@ -1,10 +1,10 @@
 CPPC=g++
 DIST=dist/
-MODULES=Database
+MODULES=Core Database Net
 MAIN=Main/src/SARemoteDatabase.cpp
 BIN=saremotedatabase
 
-CPP_FLAGS=-std=c++0x -Werror -Wall
+CPP_FLAGS=-std=c++0x -Werror -Wall -g
 
 SRCS:=$(MAIN)
 INC_DIRS:=. /mnt/hdd2/local/share/include

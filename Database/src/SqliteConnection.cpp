@@ -1,3 +1,4 @@
+#include "Core/Utility.h"
 #include "Database/src/SqliteConnection.h"
 
 #include <cstdlib>
@@ -16,37 +17,6 @@ static string retrieveQuery= "select achv_index, completed, progress from data d
 static string saveStmt= "insert into data (steamid64,pack_id,achv_index,completed,progress) select ?, p.id, ?, ?, ? from pack p where p.name=?";
 static string addPackName= "insert into pack (name) values (?)";
 
-static string join(const vector<string>& parts, char separator) {
-    string joinedStr;
-
-    for(auto it= parts.begin(); it != parts.end(); it++) {
-        if (it != parts.begin()) {
-            joinedStr+= separator;
-        }
-        joinedStr+= (*it);
-    }
-    return joinedStr;
-}
-
-static vector<string> split(const string& str, char separator) {
-    string tempStr;
-    vector<string> parts;
-    size_t i= 0;
-
-    while(i < str.size()) {
-        if (str[i] == separator && !tempStr.empty()) {
-            parts.push_back(tempStr);
-            tempStr.clear();
-        } else {
-            tempStr+= str[i];
-        }
-    }
-    if (!tempStr.empty()) {
-        parts.push_back(tempStr);
-    }
-    return parts;
-}
- 
 SqliteConnection::SqliteConnection() {
     logger= Logger::getLogger("saremotedatabase");
 }
@@ -84,13 +54,13 @@ string SqliteConnection::retrieveAchievementData(const string& steamid64, const 
         logger->log(Level::SEVERE, "Cannot retrieve achievement data");
     }
     sqlite3_finalize(stmt);
-    return join(dataParts, ';');
+    return utility::join(dataParts, ';');
 }
 
 void SqliteConnection::saveAchievementData(const string& steamid64, const string& packName, const string& data) {
     char* errorMessage;
     sqlite3_stmt *stmt;
-    auto dataParts= split(data, ';');
+    auto dataParts= utility::split(data, ';');
 
     sqlite3_prepare_v2(dbObj, addPackName.c_str(), addPackName.size(), &stmt, NULL);
     sqlite3_bind_text(stmt, 1, packName.c_str(), packName.size(), SQLITE_STATIC);
@@ -100,7 +70,7 @@ void SqliteConnection::saveAchievementData(const string& steamid64, const string
     sqlite3_exec(dbObj, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
     sqlite3_prepare_v2(dbObj, saveStmt.c_str(), saveStmt.size(), &stmt, NULL);
     for(string &achvState: dataParts) {
-        auto stateParts= split(achvState, ',');
+        auto stateParts= utility::split(achvState, ',');
 
         sqlite3_bind_text(stmt, 1, steamid64.c_str(), steamid64.size(), SQLITE_STATIC);
         sqlite3_bind_int(stmt, 2, atoi(stateParts[0].c_str()));

@@ -3,8 +3,10 @@
 #include "CppUtilities/Network/ServerSocket.h"
 #include "CppUtilities/Network/Socket.h"
 
+#include "Core/Utility.h"
 #include "Database/Connection.h"
 #include "Database/src/SqliteConnection.h"
+#include "Net/Message.h"
 
 #include <cstdlib>
 #include <memory>
@@ -25,10 +27,26 @@ void handler(shared_ptr<Socket> socket) {
     socket->write("server-achievements,1,response|0");
 
     while((line= socket->readLine()) != "") {
+        vector<string> bodyParts;
+        Message request, response;
         logger->log(Level::INFO, line);
-        data= "server-achievements,1,response|0|" + dbConn->retrieveAchievementData("76561197961630515","Stock KF");
-        socket->write(data);
-        logger->log(Level::INFO, "data: " + data);
+        request= Message::parse(line);
+
+        switch (request.getRequest()) {
+            case Message::CONNECT:
+                break;
+            case Message::RETRIEVE:
+                bodyParts= utility::split(request.getBody(), ',');
+                data= dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
+                break;
+            case Message::SAVE:
+                break;
+            default:
+                break;
+        }
+        response.setType(Message::RESPONSE).setStatus(0).setBody(data);
+        socket->write(response.toString());
+        logger->log(Level::INFO, "response: " + response.toString());
     }
 }
 
