@@ -21,13 +21,14 @@ Connection *dbConn;
 Logger *logger;
 
 void handler(shared_ptr<Socket> socket) {
-    string line, data;
+    string line;
     
     logger->log(Level::INFO, "request: " + socket->readLine());
     socket->write("server-achievements,1,response|0");
 
     while((line= socket->readLine()) != "") {
         vector<string> bodyParts;
+        string data;
         Message request, response;
         logger->log(Level::INFO, line);
         request= Message::parse(line);
@@ -36,10 +37,12 @@ void handler(shared_ptr<Socket> socket) {
             case Message::CONNECT:
                 break;
             case Message::RETRIEVE:
-                bodyParts= utility::split(request.getBody(), ',');
+                bodyParts= utility::split(request.getBody(), '.');
                 data= dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
                 break;
             case Message::SAVE:
+                bodyParts= utility::split(request.getBody(), '.');
+                dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
                 break;
             default:
                 break;
