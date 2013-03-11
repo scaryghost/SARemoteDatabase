@@ -4,7 +4,11 @@ MODULES=Core Database Net
 MAIN=Main/src/SARemoteDatabase.cpp
 BIN=saremotedatabase
 
-CPP_FLAGS=-std=c++0x -Werror -Wall -g
+CPP_FLAGS:=-std=c++0x -Werror -Wall
+
+ifdef DEBUG
+    CPP_FLAGS+= -g
+endif
 
 SRCS:=$(MAIN)
 INC_DIRS:=. /mnt/hdd2/local/share/include
