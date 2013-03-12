@@ -155,27 +155,13 @@ try {
 }
 
 void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime) {
-    Logger *logger= Logger::getLogger("saremotedatabase");
-    int delta;
+    int delta(0);
     timespec timeout= {60, 0};
 
-    while(true) {
-        stringstream ss;
-
-            logger->log(Level::INFO, "going to sleep...!");
+    while(delta < 60 && !socket->isClosed()) {
         nanosleep(&timeout, NULL);
         delta= duration_cast<seconds>(system_clock::now() - (*lastActiveTime)).count();
-        
-        ss << "delta: " << delta;
-        logger->log(Level::INFO, ss.str());
-        if (delta >= 60) {
-            socket->close();
-            break;
-        } else {
-            timeout.tv_sec= 60 - delta;
-        }
+        timeout.tv_sec= 60 - delta;
     }
-    logger->log(Level::INFO, "terminating timeoutCheck!");
-
 }
 
