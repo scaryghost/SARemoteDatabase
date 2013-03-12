@@ -8,24 +8,31 @@
 #include "Database/src/SqliteConnection.h"
 #include "Net/Message.h"
 
+#include <chrono>
 #include <cstdlib>
 #include <memory>
 #include <sstream>
 #include <thread>
+#include <vector>
 
 using namespace etsai::cpputilities;
 using namespace etsai::saremotedatabase;
-using namespace std;
+using namespace std::chrono;
 
-Connection *dbConn;
+using std::shared_ptr;
+using std::thread;
+using std::vector;
+
+shared_ptr<Connection> dbConn;
 Logger *logger;
 
 static int port;
 static string dbURL, dbUser, dbPasswd, password;
 
 void start();
-void handler(shared_ptr<Socket> socket);
 void initDbConnection();
+void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime);
+void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime);
 
 int main(int argc, char **argv) {
     logger= Logger::getLogger("saremotedatabase");
@@ -68,18 +75,31 @@ void start() {
     logger->log(Level::INFO, msg.str());
     server.bind(port);
     while(true) {
-        shared_ptr<Socket> client= server.accept();
+        shared_ptr<Socket> client(server.accept());
+        shared_ptr<time_point<system_clock> > lastActiveTime(new time_point<system_clock>);
+
         logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
-        thread th(handler, client);
+        thread th(handler, client, lastActiveTime);
+        thread th2(timeout, client, lastActiveTime);
         th.detach();
+        th2.detach();
     }
 }
 
-void handler(shared_ptr<Socket> socket) {
-    bool validConnection= true;
+void initDbConnection() {
+    dbConn.reset(new SqliteConnection());
+    dbConn->open(dbURL, dbUser, dbPasswd);
+}
+
+void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime) {
+    bool terminate(false), authenticated(false);
+    Logger *logger= Logger::getLogger("saremotedatabase");
     string line;
+    vector<Message> pendingRequests;
     
-    while(validConnection && (line= socket->readLine()) != "") {
+try {
+    logger->log(Level::INFO, "Trying to get a line!");
+    while(!terminate && (line= socket->readLine()) != "") {
         vector<string> bodyParts;
         string body;
         int status;
@@ -91,23 +111,34 @@ void handler(shared_ptr<Socket> socket) {
         switch (request.getRequest()) {
             case Message::CONNECT:
                 if (request.getBody() != password) {
-                    validConnection= false;
+                    terminate= true;
                     body= "Invalid password";
                     status= 1;
                 } else {
                     status= 0;
+                    authenticated= true;
+                    (*lastActiveTime)= system_clock::now();
                 }
-                
                 break;
             case Message::RETRIEVE:
-                bodyParts= utility::split(request.getBody(), '.');
-                body= dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
-                status= 0;
+                if (authenticated) {
+                    bodyParts= utility::split(request.getBody(), '.');
+                    body= dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
+                    status= 0;
+                    (*lastActiveTime)= system_clock::now();
+                } else {
+                    pendingRequests.push_back(request);
+                }
                 break;
             case Message::SAVE:
-                bodyParts= utility::split(request.getBody(), '.');
-                dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
-                status= 0;
+                if (authenticated) {
+                    bodyParts= utility::split(request.getBody(), '.');
+                    dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
+                    status= 0;
+                    (*lastActiveTime)= system_clock::now();
+                } else {
+                    pendingRequests.push_back(request);
+                }
                 break;
             default:
                 break;
@@ -116,13 +147,35 @@ void handler(shared_ptr<Socket> socket) {
         socket->write(response.toString() + "\n");
         logger->log(Level::INFO, "response: " + response.toString());
     }
+} catch (exception &e) {
+    logger->log(Level::SEVERE, e.what());
+}
     socket->close();
     logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
 }
 
-void initDbConnection() {
-    dbConn= new SqliteConnection();
-    dbConn->open(dbURL, dbUser, dbPasswd);
-}
+void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime) {
+    Logger *logger= Logger::getLogger("saremotedatabase");
+    int delta;
+    timespec timeout= {60, 0};
 
+    while(true) {
+        stringstream ss;
+
+            logger->log(Level::INFO, "going to sleep...!");
+        nanosleep(&timeout, NULL);
+        delta= duration_cast<seconds>(system_clock::now() - (*lastActiveTime)).count();
+        
+        ss << "delta: " << delta;
+        logger->log(Level::INFO, ss.str());
+        if (delta >= 60) {
+            socket->close();
+            break;
+        } else {
+            timeout.tv_sec= 60 - delta;
+        }
+    }
+    logger->log(Level::INFO, "terminating timeoutCheck!");
+
+}
 
