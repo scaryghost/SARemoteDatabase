@@ -93,20 +93,14 @@ void initDbConnection() {
 
 void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime) {
     bool terminate(false), authenticated(false);
-    Logger *logger= Logger::getLogger("saremotedatabase");
     string line;
     vector<Message> pendingRequests;
     
-try {
-    logger->log(Level::INFO, "Trying to get a line!");
-    while(!terminate && (line= socket->readLine()) != "") {
+    auto process= [&pendingRequests, &socket, &terminate, &authenticated, &lastActiveTime](const Message& request) -> void {
         vector<string> bodyParts;
-        string body;
+        Message response;
         int status;
-        Message request, response;
-
-        logger->log(Level::INFO, "request: " + line);
-        request= Message::parse(line);
+        string body;
 
         switch (request.getRequest()) {
             case Message::CONNECT:
@@ -143,13 +137,29 @@ try {
             default:
                 break;
         }
-        response.setType(Message::RESPONSE).setStatus(status).setBody(body).setId(request.getId());
-        socket->write(response.toString() + "\n");
-        logger->log(Level::INFO, "response: " + response.toString());
+        if (authenticated) {
+            response.setType(Message::RESPONSE).setStatus(status).setBody(body).setId(request.getId());
+            socket->write(response.toString() + "\n");
+            logger->log(Level::INFO, "response: " + response.toString());
+        }
+    };
+
+    try {
+        logger->log(Level::INFO, "Trying to get a line!");
+        while(!terminate && (line= socket->readLine()) != "") {
+            logger->log(Level::INFO, "request: " + line);
+            process(Message::parse(line));
+            if (authenticated && !pendingRequests.empty()) {
+                for(Message &msg: pendingRequests) {
+                    process(msg);
+                }
+                pendingRequests.clear();
+            }
+        }
+    } catch (exception &e) {
+        logger->log(Level::SEVERE, e.what());
     }
-} catch (exception &e) {
-    logger->log(Level::SEVERE, e.what());
-}
+
     socket->close();
     logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
 }
@@ -163,5 +173,7 @@ void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         delta= duration_cast<seconds>(system_clock::now() - (*lastActiveTime)).count();
         timeout.tv_sec= 60 - delta;
     }
+    socket->close();
+    logger->log(Level::INFO, "Timeout!  force closing the connection!");
 }
 
