@@ -2,8 +2,15 @@
 
 #include "Core/Common.h"
 
+#include <signal.h>
+
 using namespace etsai::cpputilities;
 using namespace etsai::saremotedatabase;
+
+void ctrlHandler(int s) {
+    common::logger->log(Level::INFO, "Shutting down...");
+    common::dbConn->close();
+}
 
 int main(int argc, char **argv) {
     int port;
@@ -35,6 +42,15 @@ int main(int argc, char **argv) {
 
     common::logger->addHandler(new ConsoleHandler());
     common::logger->addHandler(new FileHandler());
+
+    struct sigaction sigIntHandler;
+
+    sigIntHandler.sa_handler= ctrlHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
     common::initDbConnection(dbURL, dbUser, dbPasswd);
     common::start(port, password);
 
