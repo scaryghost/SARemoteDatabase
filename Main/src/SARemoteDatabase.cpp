@@ -6,12 +6,9 @@
 using namespace etsai::cpputilities;
 using namespace etsai::saremotedatabase;
 
-using std::wstring;
-
 int main(int argc, char **argv) {
     int port, timeout= 60;
-    string dbURL, dbUser, dbPasswd, password;
-    wstring dbLib;
+    string dbURL, dbUser, dbPasswd, dbLib, password;
 
     common::logger= Logger::getLogger("saremotedatabase");
 
@@ -36,8 +33,7 @@ int main(int argc, char **argv) {
             dbPasswd= args.asString(0);
         }).withArgName("password").withDescription("Password for logging into the database"))
         .addOption(Option("-dblib", 0, 1, [&dbLib](const Arguments &args) -> void {
-            string arg= args.asString(0);
-            dbLib= wstring(arg.begin(), arg.end());
+            dbLib= args.asString(0);
         }).withArgName("libname").withDescription("Dynamic library to process achievement data, replacing the default sqlite code"))
         .addOption(Option("-timeout", 0, 1, [&timeout](const Arguments &args) -> void {
             timeout= args.asInteger(0);

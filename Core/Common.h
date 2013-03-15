@@ -14,7 +14,6 @@ namespace saremotedatabase {
 namespace common {
 
 using std::string;
-using std::wstring;
 using namespace cpputilities;
 
 extern Logger* logger;
@@ -25,7 +24,7 @@ extern struct sigaction sigIntHandler;
 
 void start(int port, const string& password, int timeout);
 void initCtrlHandler();
-void loadDBLib(const wstring& dbLib);
+void loadDBLib(const string& dbLib);
 
 }   //namespace common
 }   //namespace saremotedatabase

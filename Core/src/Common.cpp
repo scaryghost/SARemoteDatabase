@@ -10,6 +10,8 @@
 #include <thread>
 #ifdef WIN32
 #include <windows.h> 
+#else
+#include <dlfcn.h>
 #endif
 
 namespace etsai {
@@ -26,6 +28,8 @@ static ServerSocket server;
 
 #ifndef WIN32
 struct sigaction sigIntHandler;
+typedef Connection* (*CreateConnType)();
+void *dllHandle;
 #else
 static HINSTANCE dllHandle;
 typedef Connection* (__cdecl *CreateConnType)();
@@ -72,25 +76,36 @@ void start(int port, const string& password, int timeout) {
     }
 }
 
-void loadDBLib(const wstring& dbLib) {
+void loadDBLib(const string& dbLib) {
+#ifdef WIN32
+    string bdLibWStr= wstring(dbLib.begin(), dbLib.end());
     LPCWSTR dbLibWStr= dbLib.c_str();
+#endif
     CreateConnType connCreator;
 
     if (dbLib.empty()) {
         dbConn= new SqliteConnection();
         return;
     }
-
+#ifdef WIN32
     dllHandle= LoadLibrary(dbLibWStr);
+#else
+    dllHandle= dlopen(dbLib.c_str(), RTLD_LAZY);
+#endif
     if (!dllHandle) {
         logger->log(Level::WARNING, "Error!  Cannot load db library ");
         exit(1);
         return;
     }
-
+#ifdef WIN32
     connCreator= reinterpret_cast<CreateConnType>(GetProcAddress(dllHandle, "createConnection"));
+#else
+    connCreator= reinterpret_cast<CreateConnType>(dlsym(dllHandle, "createConnection"));
+#endif
     if(!connCreator) {
+#ifdef WIN32
         FreeLibrary(dllHandle);
+#endif
         logger->log(Level::WARNING, "Error!  Unable to load function createConnection");
         exit(1);
         return;
