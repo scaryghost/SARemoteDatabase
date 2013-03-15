@@ -7,8 +7,8 @@ using namespace etsai::cpputilities;
 using namespace etsai::saremotedatabase;
 
 int main(int argc, char **argv) {
-    int port;
-    string dbURL, dbUser, dbPasswd, password;
+    int port, timeout= 60;
+    string dbURL, dbUser, dbPasswd, dbLib, password;
 
     common::logger= Logger::getLogger("saremotedatabase");
 
@@ -28,10 +28,13 @@ int main(int argc, char **argv) {
         }).withLongOpt("--help").withDescription("Displays this help message and exits"))
         .addOption(Option("-dbuser", 0, 1, [&dbUser](const Arguments &args) -> void {
             dbUser= args.asString(0);
-        }).withArgName("user name").withDescription("Username for logging into the database"))
+        }).withArgName("username").withDescription("Username for logging into the database"))
         .addOption(Option("-dbpwd", 0, 1, [&dbPasswd](const Arguments &args) -> void {
             dbPasswd= args.asString(0);
         }).withArgName("password").withDescription("Password for logging into the database"))
+        .addOption(Option("-timeout", 0, 1, [&timeout](const Arguments &args) -> void {
+            timeout= args.asInteger(0);
+        }).withArgName("sec").withDescription("How long (in sec) before an idle connection auto closes.  Use 0 to leave the connection open."))
         .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <value> [options]");
         cli->parse(argc, argv);
 
@@ -40,7 +43,7 @@ int main(int argc, char **argv) {
         
         common::initCtrlHandler();
         common::initDbConnection(dbURL, dbUser, dbPasswd);
-        common::start(port, password);
+        common::start(port, password, timeout);
     } catch (CppUtilitiesException &ex) {
         common::logger->log(Level::SEVERE, ex.what());
         return ex.getStatus();

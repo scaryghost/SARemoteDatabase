@@ -22,7 +22,7 @@ extern Connection* dbConn;
 extern struct sigaction sigIntHandler;
 #endif
 
-void start(int port, const string& password);
+void start(int port, const string& password, int timeout);
 void initDbConnection(const string& dbURL, const string& dbUser, const string& dbPasswd);
 void initCtrlHandler();
 

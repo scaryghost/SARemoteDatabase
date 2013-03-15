@@ -49,7 +49,7 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 } 
 #endif
 
-void start(int port, const string& password) {
+void start(int port, const string& password, int timeout) {
     stringstream msg;
 
     msg << "Listening on port: " << port;
@@ -61,7 +61,7 @@ void start(int port, const string& password) {
 
         common::logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
         thread th(tcplistener::handler, client, lastActiveTime, password);
-        thread th2(tcplistener::timeout, client, lastActiveTime);
+        thread th2(tcplistener::timeout, client, lastActiveTime, timeout);
         th.detach();
         th2.detach();
     }

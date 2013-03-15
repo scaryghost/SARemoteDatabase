@@ -15,7 +15,7 @@ using namespace std::chrono;
 using std::shared_ptr;
 
 void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime, const string& password);
-void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime);
+void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime, int timeout);
 
 }   //namespace tcplistener
 }   //namespace saremotedatabase

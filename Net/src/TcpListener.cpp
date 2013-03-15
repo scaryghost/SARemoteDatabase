@@ -73,7 +73,7 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
     };
 
     try {
-        common::logger->log(Level::INFO, "Trying to get a line!");
+        common::logger->log(Level::INFO, "Waiting for a request from " + socket->getAddressPort());
         while(!terminate && (line= socket->readLine()) != "") {
             common::logger->log(Level::INFO, "request: " + line);
             process(Message::parse(line));
@@ -90,29 +90,33 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
 
     socket->close();
     common::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
-
 }
 
-void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime) {
-    int delta(0);
+void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime,  int timeout) {
 #ifndef WIN32
-    timespec timeout= {60, 0};
+    int delta(0);
+    timespec sleepTime= {timeout, 0};
+#else
+    __int64 delta(0);
 #endif
 
-    while(delta < 60 && !socket->isClosed()) {
+    while(timeout > 0 && delta < timeout && !socket->isClosed()) {
 #ifndef WIN32
-        nanosleep(&timeout, NULL);
+        nanosleep(&sleepTime, NULL);
 #else
-        Sleep(60000);
+        Sleep(timeout * 1000);
 #endif
         delta= duration_cast<seconds>(system_clock::now() - (*lastActiveTime)).count();
 #ifndef WIN32
-        timeout.tv_sec= 60 - delta;
+        sleepTime.tv_sec= timeout - delta;
 #endif
         
     }
+    if (!socket->isClosed()) {
+        common::logger->log(Level::INFO, "Idle max time reached.  Force closing the connection from " + socket->getAddressPort());
+    }
     socket->close();
-    common::logger->log(Level::INFO, "Timeout!  force closing the connection from " + socket->getAddressPort());
+    
 }
 
 }
