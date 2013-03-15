@@ -18,7 +18,7 @@ Message Message::parse(const string& msg) {
     Message msgObj;
     Type type;
     Request request;
-    int status;
+    int status= -1;
 
     auto parts= utility::split(msg, '|');
     auto header= utility::split(parts[0], ',');

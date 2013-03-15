@@ -5,6 +5,10 @@
 
 #include <vector>
 
+#ifdef WIN32
+#include <windows.h> 
+#endif
+
 namespace etsai {
 namespace saremotedatabase {
 namespace tcplistener {
@@ -91,12 +95,21 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
 
 void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime) {
     int delta(0);
+#ifndef WIN32
     timespec timeout= {60, 0};
+#endif
 
     while(delta < 60 && !socket->isClosed()) {
+#ifndef WIN32
         nanosleep(&timeout, NULL);
+#else
+        Sleep(60000);
+#endif
         delta= duration_cast<seconds>(system_clock::now() - (*lastActiveTime)).count();
+#ifndef WIN32
         timeout.tv_sec= 60 - delta;
+#endif
+        
     }
     socket->close();
     common::logger->log(Level::INFO, "Timeout!  force closing the connection from " + socket->getAddressPort());

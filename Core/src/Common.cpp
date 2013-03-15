@@ -8,6 +8,9 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#ifdef WIN32
+#include <windows.h> 
+#endif
 
 namespace etsai {
 namespace saremotedatabase {
@@ -17,8 +20,31 @@ using namespace std::chrono;
 using std::shared_ptr;
 using std::thread;
 
-shared_ptr<Logger> logger;
-shared_ptr<Connection> dbConn;
+Logger* logger;
+Connection* dbConn;
+#ifndef WIN32
+struct sigaction sigIntHandler;
+#endif
+
+#ifndef WIN32
+static void ctrlHandler(int s) {
+    common::logger->log(Level::INFO, "Shutting down...");
+    common::dbConn->close();
+}
+#else
+static BOOL ctrlHandler(DWORD fdwCtrlType) {  
+    switch(fdwCtrlType) { 
+        case CTRL_C_EVENT:
+        case CTRL_CLOSE_EVENT: 
+            common::logger->log(Level::INFO, "Shutting down...");
+            common::dbConn->close();
+            break;
+        default: 
+            break;
+    }
+    return FALSE;
+} 
+#endif
 
 void start(int port, const string& password) {
     ServerSocket server;
@@ -40,8 +66,24 @@ void start(int port, const string& password) {
 }
 
 void initDbConnection(const string& dbURL, const string& dbUser, const string& dbPasswd) {
-    common::dbConn.reset(new SqliteConnection());
+    common::dbConn= new SqliteConnection();
     common::dbConn->open(dbURL, dbUser, dbPasswd);
+}
+
+void initCtrlHandler() {
+#ifndef WIN32
+    struct sigaction sigIntHandler;
+
+    sigIntHandler.sa_handler= ctrlHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntHandler, NULL);
+#else
+    if(!SetConsoleCtrlHandler((PHANDLER_ROUTINE) ctrlHandler, TRUE)) { 
+        common::logger->log(Level::WARNING, "Could not set control handler");
+    }
+#endif
 }
 
 }
