@@ -22,22 +22,25 @@ using std::thread;
 
 Logger* logger;
 Connection* dbConn;
+static ServerSocket server;
 #ifndef WIN32
 struct sigaction sigIntHandler;
 #endif
 
 #ifndef WIN32
 static void ctrlHandler(int s) {
-    common::logger->log(Level::INFO, "Shutting down...");
-    common::dbConn->close();
+    logger->log(Level::INFO, "Shutting down...");
+    dbConn->close();
+    server.close();
 }
 #else
 static BOOL ctrlHandler(DWORD fdwCtrlType) {  
     switch(fdwCtrlType) { 
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT: 
-            common::logger->log(Level::INFO, "Shutting down...");
-            common::dbConn->close();
+            logger->log(Level::INFO, "Shutting down...");
+            dbConn->close();
+            server.close();
             break;
         default: 
             break;
@@ -47,7 +50,6 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 #endif
 
 void start(int port, const string& password) {
-    ServerSocket server;
     stringstream msg;
 
     msg << "Listening on port: " << port;
@@ -81,7 +83,7 @@ void initCtrlHandler() {
     sigaction(SIGINT, &sigIntHandler, NULL);
 #else
     if(!SetConsoleCtrlHandler((PHANDLER_ROUTINE) ctrlHandler, TRUE)) { 
-        common::logger->log(Level::WARNING, "Could not set control handler");
+        logger->log(Level::WARNING, "Could not set control handler");
     }
 #endif
 }
