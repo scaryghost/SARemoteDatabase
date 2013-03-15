@@ -6,9 +6,12 @@
 using namespace etsai::cpputilities;
 using namespace etsai::saremotedatabase;
 
+using std::wstring;
+
 int main(int argc, char **argv) {
     int port, timeout= 60;
-    string dbURL, dbUser, dbPasswd, dbLib, password;
+    string dbURL, dbUser, dbPasswd, password;
+    wstring dbLib;
 
     common::logger= Logger::getLogger("saremotedatabase");
 
@@ -32,6 +35,10 @@ int main(int argc, char **argv) {
         .addOption(Option("-dbpwd", 0, 1, [&dbPasswd](const Arguments &args) -> void {
             dbPasswd= args.asString(0);
         }).withArgName("password").withDescription("Password for logging into the database"))
+        .addOption(Option("-dblib", 0, 1, [&dbLib](const Arguments &args) -> void {
+            string arg= args.asString(0);
+            dbLib= wstring(arg.begin(), arg.end());
+        }).withArgName("libname").withDescription("Dynamic library to process achievement data, replacing the default sqlite code"))
         .addOption(Option("-timeout", 0, 1, [&timeout](const Arguments &args) -> void {
             timeout= args.asInteger(0);
         }).withArgName("sec").withDescription("How long (in sec) before an idle connection auto closes.  Use 0 to leave the connection open."))
@@ -40,9 +47,9 @@ int main(int argc, char **argv) {
 
         common::logger->addHandler(new ConsoleHandler());
         common::logger->addHandler(new FileHandler());
-        
+        common::loadDBLib(dbLib);
+        common::dbConn->open(dbURL, dbUser, dbPasswd);
         common::initCtrlHandler();
-        common::initDbConnection(dbURL, dbUser, dbPasswd);
         common::start(port, password, timeout);
     } catch (CppUtilitiesException &ex) {
         common::logger->log(Level::SEVERE, ex.what());

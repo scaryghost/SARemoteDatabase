@@ -23,9 +23,14 @@ using std::thread;
 Logger* logger;
 Connection* dbConn;
 static ServerSocket server;
+
 #ifndef WIN32
 struct sigaction sigIntHandler;
+#else
+static HINSTANCE dllHandle;
+typedef Connection* (__cdecl *CreateConnType)();
 #endif
+
 
 #ifndef WIN32
 static void ctrlHandler(int s) {
@@ -67,9 +72,30 @@ void start(int port, const string& password, int timeout) {
     }
 }
 
-void initDbConnection(const string& dbURL, const string& dbUser, const string& dbPasswd) {
-    common::dbConn= new SqliteConnection();
-    common::dbConn->open(dbURL, dbUser, dbPasswd);
+void loadDBLib(const wstring& dbLib) {
+    LPCWSTR dbLibWStr= dbLib.c_str();
+    CreateConnType connCreator;
+
+    if (dbLib.empty()) {
+        dbConn= new SqliteConnection();
+        return;
+    }
+
+    dllHandle= LoadLibrary(dbLibWStr);
+    if (!dllHandle) {
+        logger->log(Level::WARNING, "Error!  Cannot load db library ");
+        exit(1);
+        return;
+    }
+
+    connCreator= reinterpret_cast<CreateConnType>(GetProcAddress(dllHandle, "createConnection"));
+    if(!connCreator) {
+        FreeLibrary(dllHandle);
+        logger->log(Level::WARNING, "Error!  Unable to load function createConnection");
+        exit(1);
+        return;
+    }
+    dbConn= connCreator();
 }
 
 void initCtrlHandler() {
