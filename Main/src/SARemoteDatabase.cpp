@@ -3,8 +3,12 @@
 
 #include "Core/Common.h"
 
+#include <iostream>
+
 using namespace etsai::cpputilities;
 using namespace etsai::saremotedatabase;
+
+const char* version= "1.0.0";
 
 int main(int argc, char **argv) {
     int port, timeout= 60;
@@ -22,7 +26,7 @@ int main(int argc, char **argv) {
         }).withArgName("url").withDescription("URL to the database storing achievement information").withRequired(true))
         .addOption(Option("-passwd", 0, 1, [&password](const Arguments &args) -> void {
             password= args.asString(0);
-        }).withArgName("value").withDescription("Password for connecting to the server").withRequired(true))
+        }).withArgName("password").withDescription("Password for connecting to the server").withRequired(true))
         .addOption(Option("-h", [&cli](const Arguments &args) -> void {
             cli->displayUsage();
         }).withLongOpt("--help").withDescription("Displays this help message and exits"))
@@ -38,7 +42,11 @@ int main(int argc, char **argv) {
         .addOption(Option("-timeout", 0, 1, [&timeout](const Arguments &args) -> void {
             timeout= args.asInteger(0);
         }).withArgName("sec").withDescription("How long (in sec) before an idle connection auto closes.  Use 0 to leave the connection open."))
-        .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <value> [options]");
+        .addOption(Option("-v", [](const Arguments &args) -> void {
+            std::cout << "saremotedatabase " << version << std::endl;
+            std::cout << "git page: https://github.com/scaryghost/SARemoteDatabase" << std::endl;
+        }).withLongOpt("--version").withDescription("Prints version and exits"))
+        .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <password> [options]");
         cli->parse(argc, argv);
 
         common::logger->addHandler(new ConsoleHandler());
