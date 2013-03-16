@@ -1,4 +1,6 @@
-#include "Core/Common.h"
+#include "Application/Outer.h"
+
+#include "Core/Global.h"
 #include "Database/src/SqliteConnection.h"
 #include "Net/TcpListener.h"
 
@@ -12,34 +14,32 @@
 #include <windows.h> 
 #else
 #include <dlfcn.h>
+#include <signal.h>
 #endif
 
 namespace etsai {
 namespace saremotedatabase {
-namespace common {
+namespace outer {
 
+using namespace cpputilities;
 using namespace std::chrono;
 using std::shared_ptr;
 using std::thread;
 
-Logger* logger;
-Connection* dbConn;
 static ServerSocket server;
-
 #ifndef WIN32
-struct sigaction sigIntHandler;
+static struct sigaction sigIntHandler;
 typedef Connection* (*CreateConnType)();
-void *dllHandle;
+static void *dllHandle;
 #else
 static HINSTANCE dllHandle;
 typedef Connection* (__cdecl *CreateConnType)();
 #endif
 
-
 #ifndef WIN32
 static void ctrlHandler(int s) {
-    logger->log(Level::INFO, "Shutting down...");
-    dbConn->close();
+    global::logger->log(Level::INFO, "Shutting down...");
+    global::dbConn->close();
     server.close();
 }
 #else
@@ -47,8 +47,8 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
     switch(fdwCtrlType) { 
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT: 
-            logger->log(Level::INFO, "Shutting down...");
-            dbConn->close();
+            global::logger->log(Level::INFO, "Shutting down...");
+            global::dbConn->close();
             server.close();
             break;
         default: 
@@ -62,13 +62,13 @@ void start(int port, const string& password, int timeout) {
     stringstream msg;
 
     msg << "Listening on port: " << port;
-    common::logger->log(Level::INFO, msg.str());
+    global::logger->log(Level::INFO, msg.str());
     server.bind(port);
     while(true) {
         shared_ptr<Socket> client(server.accept());
         shared_ptr<time_point<system_clock> > lastActiveTime(new time_point<system_clock>);
 
-        common::logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
+        global::logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
         thread th(tcplistener::handler, client, lastActiveTime, password);
         thread th2(tcplistener::timeout, client, lastActiveTime, timeout);
         th.detach();
@@ -84,7 +84,7 @@ void loadDBLib(const string& dbLib) {
     CreateConnType connCreator;
 
     if (dbLib.empty()) {
-        dbConn= new SqliteConnection();
+        global::dbConn= new SqliteConnection();
         return;
     }
 #ifdef WIN32
@@ -93,7 +93,7 @@ void loadDBLib(const string& dbLib) {
     dllHandle= dlopen(dbLib.c_str(), RTLD_LAZY);
 #endif
     if (!dllHandle) {
-        logger->log(Level::WARNING, "Error!  Cannot load db library ");
+        global::logger->log(Level::WARNING, "Error!  Cannot load db library ");
         exit(1);
         return;
     }
@@ -106,17 +106,15 @@ void loadDBLib(const string& dbLib) {
 #ifdef WIN32
         FreeLibrary(dllHandle);
 #endif
-        logger->log(Level::WARNING, "Error!  Unable to load function createConnection");
+        global::logger->log(Level::WARNING, "Error!  Unable to load function createConnection");
         exit(1);
         return;
     }
-    dbConn= connCreator();
+    global::dbConn= connCreator();
 }
 
 void initCtrlHandler() {
 #ifndef WIN32
-    struct sigaction sigIntHandler;
-
     sigIntHandler.sa_handler= ctrlHandler;
     sigemptyset(&sigIntHandler.sa_mask);
     sigIntHandler.sa_flags = 0;
@@ -124,11 +122,12 @@ void initCtrlHandler() {
     sigaction(SIGINT, &sigIntHandler, NULL);
 #else
     if(!SetConsoleCtrlHandler((PHANDLER_ROUTINE) ctrlHandler, TRUE)) { 
-        logger->log(Level::WARNING, "Could not set control handler");
+        global::logger->log(Level::WARNING, "Could not set control handler");
     }
 #endif
 }
 
-}
-}
-}
+}   //namespace outer
+}   //namespace saremotedatabase
+}   //namespace etsai
+

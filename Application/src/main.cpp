@@ -1,7 +1,8 @@
 #include "CppUtilities/Core/CppUtilitiesException.h"
 #include "CppUtilities/Cli/cli.h"
 
-#include "Core/Common.h"
+#include "Core/Global.h"
+#include "Application/Outer.h"
 
 #include <iostream>
 
@@ -14,7 +15,7 @@ int main(int argc, char **argv) {
     int port, timeout= 60;
     string dbURL, dbUser, dbPasswd, dbLib, password;
 
-    common::logger= Logger::getLogger("saremotedatabase");
+    global::logger= Logger::getLogger("saremotedatabase");
 
     try {
         CliBuilder *cli= CliBuilder::getBuilder();
@@ -49,14 +50,14 @@ int main(int argc, char **argv) {
         .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <password> [options]");
         cli->parse(argc, argv);
 
-        common::logger->addHandler(new ConsoleHandler());
-        common::logger->addHandler(new FileHandler("log"));
-        common::loadDBLib(dbLib);
-        common::dbConn->open(dbURL, dbUser, dbPasswd);
-        common::initCtrlHandler();
-        common::start(port, password, timeout);
+        global::logger->addHandler(new ConsoleHandler());
+        global::logger->addHandler(new FileHandler("log"));
+        outer::loadDBLib(dbLib);
+        global::dbConn->open(dbURL, dbUser, dbPasswd);
+        outer::initCtrlHandler();
+        outer::start(port, password, timeout);
     } catch (CppUtilitiesException &ex) {
-        common::logger->log(Level::SEVERE, ex.what());
+        global::logger->log(Level::SEVERE, ex.what());
         return ex.getStatus();
     }
 

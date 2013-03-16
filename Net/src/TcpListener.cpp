@@ -1,6 +1,6 @@
 #include "Net/TcpListener.h"
 #include "Net/Message.h"
-#include "Core/Common.h"
+#include "Core/Global.h"
 #include "Core/Utility.h"
 
 #include <vector>
@@ -42,7 +42,7 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                 if (authenticated) {
                     bodyParts= utility::split(request.getBody(), '.');
                     if (bodyParts.size() >= 2) {
-                        body= common::dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
+                        body= global::dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
                     }
                     status= 0;
                     (*lastActiveTime)= system_clock::now();
@@ -54,7 +54,7 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                 if (authenticated) {
                     bodyParts= utility::split(request.getBody(), '.');
                     if (bodyParts.size() >= 3) {
-                        common::dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
+                        global::dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
                     }
                     status= 0;
                     (*lastActiveTime)= system_clock::now();
@@ -68,14 +68,14 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         if (authenticated) {
             response.setType(Message::RESPONSE).setStatus(status).setBody(body).setId(request.getId());
             socket->write(response.toString() + "\n");
-            common::logger->log(Level::INFO, "response: " + response.toString());
+            global::logger->log(Level::INFO, "response: " + response.toString());
         }
     };
 
     try {
-        common::logger->log(Level::INFO, "Waiting for a request from " + socket->getAddressPort());
+        global::logger->log(Level::INFO, "Waiting for a request from " + socket->getAddressPort());
         while(!terminate && (line= socket->readLine()) != "") {
-            common::logger->log(Level::INFO, "request: " + line);
+            global::logger->log(Level::INFO, "request: " + line);
             process(Message::parse(line));
             if (authenticated && !pendingRequests.empty()) {
                 for(Message &msg: pendingRequests) {
@@ -85,11 +85,11 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
             }
         }
     } catch (exception &e) {
-        common::logger->log(Level::SEVERE, e.what());
+        global::logger->log(Level::SEVERE, e.what());
     }
 
     socket->close();
-    common::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
+    global::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
 }
 
 void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime,  int timeout) {
@@ -113,7 +113,7 @@ void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         
     }
     if (!socket->isClosed()) {
-        common::logger->log(Level::INFO, "Idle max time reached.  Force closing the connection from " + socket->getAddressPort());
+        global::logger->log(Level::INFO, "Idle max time reached.  Force closing the connection from " + socket->getAddressPort());
     }
     socket->close();
     
