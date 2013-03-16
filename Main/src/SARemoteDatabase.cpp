@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
         cli->parse(argc, argv);
 
         common::logger->addHandler(new ConsoleHandler());
-        common::logger->addHandler(new FileHandler());
+        common::logger->addHandler(new FileHandler("log"));
         common::loadDBLib(dbLib);
         common::dbConn->open(dbURL, dbUser, dbPasswd);
         common::initCtrlHandler();
