@@ -5,15 +5,15 @@
 #pragma warning( disable : 4290 )
 #endif
 
-#include "Database/Connection.h"
+#include "Data/DataChannel.h"
 #include "sqlite3.h"
 
 namespace etsai {
 namespace saremotedatabase {
 
-class SqliteConnection : public Connection {
+class SqliteDataChannel : public DataChannel {
 public:
-    SqliteConnection();
+    SqliteDataChannel();
 
     virtual void open(const string& dbURL, const string& user, const string& passwd) throw (runtime_error);
     virtual void close();

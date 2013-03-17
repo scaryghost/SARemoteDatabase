@@ -2,8 +2,8 @@
 #pragma warning( disable : 4290 )
 #endif
 
+#include "Data/src/SqliteDataChannel.h"
 #include "Core/Utility.h"
-#include "Database/src/SqliteConnection.h"
 
 #include <cstdlib>
 #include <exception>
@@ -29,15 +29,15 @@ using std::exception;
 using std::stringstream;
 using std::vector;
 
-string SqliteConnection::retrieveQuery= "select achv_index, completed, progress from data d inner join pack p on p.id = d.pack_id and p.name=? and steamid64=?";
-string SqliteConnection::saveStmt= "insert or ignore into data (completed,progress,steamid64,achv_index,pack_id) select ?, ?, ?, ?, p.id from pack p where p.name=?";
-string SqliteConnection::updateStmt= "update data set completed=?, progress=? where steamid64=? and achv_index=? and pack_id=(select id from pack where name=?)";
-string SqliteConnection::addPackName= "insert into pack (name) values (?)";
+string SqliteDataChannel::retrieveQuery= "select achv_index, completed, progress from data d inner join pack p on p.id = d.pack_id and p.name=? and steamid64=?";
+string SqliteDataChannel::saveStmt= "insert or ignore into data (completed,progress,steamid64,achv_index,pack_id) select ?, ?, ?, ?, p.id from pack p where p.name=?";
+string SqliteDataChannel::updateStmt= "update data set completed=?, progress=? where steamid64=? and achv_index=? and pack_id=(select id from pack where name=?)";
+string SqliteDataChannel::addPackName= "insert into pack (name) values (?)";
 
-SqliteConnection::SqliteConnection() {
+SqliteDataChannel::SqliteDataChannel() {
 }
 
-void SqliteConnection::open(const string& dbURL, const string& user, const string& passwd) throw (runtime_error) {
+void SqliteDataChannel::open(const string& dbURL, const string& user, const string& passwd) throw (runtime_error) {
     int status;
 
     status= sqlite3_open_v2(dbURL.c_str(), &dbObj, SQLITE_OPEN_READWRITE|SQLITE_OPEN_NOMUTEX, NULL);
@@ -46,11 +46,11 @@ void SqliteConnection::open(const string& dbURL, const string& user, const strin
     }
 }
 
-void SqliteConnection::close() {
+void SqliteDataChannel::close() {
     sqlite3_close(dbObj);
 }
 
-string SqliteConnection::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
+string SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
     sqlite3_stmt *stmt;
 
     vector<string> dataParts;
@@ -73,7 +73,7 @@ string SqliteConnection::retrieveAchievementData(const string& steamid64, const 
     return utility::join(dataParts, ';');
 }
 
-void SqliteConnection::saveAchievementData(const string& steamid64, const string& packName, const string& data) throw (runtime_error) {
+void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const string& data) throw (runtime_error) {
     string exceptMsg;
     char* errorMessage;
     sqlite3_stmt *packStmt, *insert, *update;

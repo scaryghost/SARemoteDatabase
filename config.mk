@@ -1,6 +1,6 @@
 CPPC=g++
 DIST=dist
-MODULES=Application Core Database Net
+MODULES=Application Core Data Net
 MAIN=Application/src/main.cpp
 BIN=saremotedatabase
 CPPUTILS_LIBNAME:=cpputilities

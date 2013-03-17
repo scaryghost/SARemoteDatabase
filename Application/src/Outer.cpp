@@ -1,7 +1,7 @@
 #include "Application/Outer.h"
 
 #include "Core/Global.h"
-#include "Database/src/SqliteConnection.h"
+#include "Data/src/SqliteDataChannel.h"
 #include "Net/TcpListener.h"
 
 #include "CppUtilities/Network/ServerSocket.h"
@@ -29,18 +29,18 @@ using std::thread;
 static ServerSocket server;
 #ifndef WIN32
 static struct sigaction sigIntHandler;
-typedef Connection* (*CreateConnType)();
+typedef DataChannel* (*CreateDataChannelType)();
 static void *dllHandle;
 #else
 static HINSTANCE dllHandle;
-typedef Connection* (__cdecl *CreateConnType)();
+typedef DataChannel* (__cdecl *CreateDataChannelType)();
 using std::wstring;
 #endif
 
 #ifndef WIN32
 static void ctrlHandler(int s) {
     global::logger->log(Level::INFO, "Shutting down...");
-    global::dbConn->close();
+    global::dataChannel->close();
     server.close();
 }
 #else
@@ -49,7 +49,7 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT: 
             global::logger->log(Level::INFO, "Shutting down...");
-            global::dbConn->close();
+            global::dataChannel->close();
             server.close();
             break;
         default: 
@@ -82,10 +82,10 @@ void loadDBLib(const string& dbLib) throw(runtime_error) {
     wstring temp= wstring(dbLib.begin(), dbLib.end());
     LPCWSTR dbLibWStr= temp.c_str();
 #endif
-    CreateConnType connCreator;
+    CreateDataChannelType channelCreator;
 
     if (dbLib.empty()) {
-        global::dbConn= new SqliteConnection();
+        global::dataChannel= new SqliteDataChannel();
         return;
     }
 #ifdef WIN32
@@ -101,18 +101,18 @@ void loadDBLib(const string& dbLib) throw(runtime_error) {
 #endif
     
 #ifdef WIN32
-    connCreator= reinterpret_cast<CreateConnType>(GetProcAddress(dllHandle, "createConnection"));
-    if(!connCreator) {
+    channelCreator= reinterpret_cast<CreateDataChannelType>(GetProcAddress(dllHandle, "createDataChannel"));
+    if(!channelCreator) {
         FreeLibrary(dllHandle);
-        throw runtime_error("Error loading function: createConnection");
+        throw runtime_error("Error loading function: createDataChannel");
     }
 #else
-    connCreator= reinterpret_cast<CreateConnType>(dlsym(dllHandle, "createConnection"));
-    if(!connCreator) {
+    channelCreator= reinterpret_cast<CreateDataChannelType>(dlsym(dllHandle, "createDataChannel"));
+    if(!channelCreator) {
         throw runtime_error(dlerror());
     }
 #endif
-    global::dbConn= connCreator();
+    global::dataChannel= channelCreator();
 }
 
 void initCtrlHandler() {

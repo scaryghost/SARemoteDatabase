@@ -1,5 +1,5 @@
-#ifndef ETSAI_SAREMOTEDATABASE_CONNECTION
-#define ETSAI_SAREMOTEDATABASE_CONNECTION
+#ifndef ETSAI_SAREMOTEDATABASE_DATACHANNEL
+#define ETSAI_SAREMOTEDATABASE_DATACHANNEL
 
 #ifdef WIN32
 #pragma warning( disable : 4290 )
@@ -14,7 +14,7 @@ namespace saremotedatabase {
 using std::string;
 using std::runtime_error;
 
-class Connection {
+class DataChannel {
 public:
     virtual void open(const string& dbURL, const string& user, const string& passwd) throw(runtime_error)= 0;
     virtual void close()= 0;

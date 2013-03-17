@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
         global::logger->addHandler(new FileHandler(logDir));
         outer::loadDBLib(dbLib);
-        global::dbConn->open(dbURL, dbUser, dbPasswd);
+        global::dataChannel->open(dbURL, dbUser, dbPasswd);
         outer::initCtrlHandler();
         outer::start(port, password, timeout);
     } catch (CppUtilitiesException &ex) {

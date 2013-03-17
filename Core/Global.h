@@ -1,7 +1,7 @@
 #ifndef ETSAI_SAREMOTEDATABASE_COMMON
 #define ETSAI_SAREMOTEDATABASE_COMMON
 
-#include "Database/Connection.h"
+#include "Data/DataChannel.h"
 #include "CppUtilities/Logging/logging.h"
 
 namespace etsai {
@@ -12,7 +12,7 @@ using std::string;
 using namespace cpputilities;
 
 extern Logger* logger;
-extern Connection* dbConn;
+extern DataChannel* dataChannel;
 
 }   //namespace global
 }   //namespace saremotedatabase
