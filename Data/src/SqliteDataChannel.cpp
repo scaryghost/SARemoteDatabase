@@ -3,18 +3,14 @@
 #endif
 
 #include "Data/src/SqliteDataChannel.h"
-#include "Core/Utility.h"
 
-#include <cstdlib>
 #include <exception>
-#include <sstream>
-#include <vector>
 
 #define UPSERT(stmt)\
-    sqlite3_bind_int(stmt, 1, atoi(stateParts.at(1).c_str()));\
-    sqlite3_bind_int(stmt, 2, atoi(stateParts.at(2).c_str()));\
+    sqlite3_bind_int(stmt, 1, achv.completed);\
+    sqlite3_bind_int(stmt, 2, achv.progress);\
     sqlite3_bind_text(stmt, 3, steamid64.c_str(), steamid64.size(), SQLITE_STATIC);\
-    sqlite3_bind_int(stmt, 4, atoi(stateParts.at(0).c_str()));\
+    sqlite3_bind_int(stmt, 4, achv.index);\
     sqlite3_bind_text(stmt, 5, packName.c_str(), packName.size(), SQLITE_STATIC);\
     if (sqlite3_step(stmt) != SQLITE_DONE) {\
         throw runtime_error(sqlite3_errmsg(dbObj));\
@@ -24,10 +20,7 @@
 namespace etsai {
 namespace saremotedatabase {
 
-using std::atoi;
 using std::exception;
-using std::stringstream;
-using std::vector;
 
 string SqliteDataChannel::retrieveQuery= "select achv_index, completed, progress from data d inner join pack p on p.id = d.pack_id and p.name=? and steamid64=?";
 string SqliteDataChannel::saveStmt= "insert or ignore into data (completed,progress,steamid64,achv_index,pack_id) select ?, ?, ?, ?, p.id from pack p where p.name=?";
@@ -50,10 +43,9 @@ void SqliteDataChannel::close() {
     sqlite3_close(dbObj);
 }
 
-string SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
+Achievements SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
     sqlite3_stmt *stmt;
-
-    vector<string> dataParts;
+    Achievements achvInfo;
     int status;
 
     sqlite3_prepare_v2(dbObj, retrieveQuery.c_str(), retrieveQuery.size(), &stmt, NULL);
@@ -61,23 +53,20 @@ string SqliteDataChannel::retrieveAchievementData(const string& steamid64, const
     sqlite3_bind_text(stmt, 2, steamid64.c_str(), steamid64.size(), SQLITE_STATIC);
 
     while((status= sqlite3_step(stmt)) == SQLITE_ROW) {
-        stringstream colData;
-
-        colData << sqlite3_column_int(stmt, 0) << "," << sqlite3_column_int(stmt, 1) << "," << sqlite3_column_int(stmt, 2);
-        dataParts.push_back(colData.str());
+        Achievements::Info info= {sqlite3_column_int(stmt, 0), sqlite3_column_int(stmt, 1), sqlite3_column_int(stmt, 2)};
+        achvInfo.insert(info);
     }
     sqlite3_finalize(stmt);
     if (status != SQLITE_DONE) {
         throw runtime_error(sqlite3_errmsg(dbObj));
     }
-    return utility::join(dataParts, ';');
+    return achvInfo;
 }
 
-void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const string& data) throw (runtime_error) {
+void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const Achievements achvData) throw (runtime_error) {
     string exceptMsg;
     char* errorMessage;
     sqlite3_stmt *packStmt, *insert, *update;
-    auto dataParts= utility::split(data, ';');
 
     sqlite3_prepare_v2(dbObj, addPackName.c_str(), addPackName.size(), &packStmt, NULL);
     sqlite3_bind_text(packStmt, 1, packName.c_str(), packName.size(), SQLITE_STATIC);
@@ -88,8 +77,7 @@ void SqliteDataChannel::saveAchievementData(const string& steamid64, const strin
         sqlite3_exec(dbObj, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
         sqlite3_prepare_v2(dbObj, saveStmt.c_str(), saveStmt.size(), &insert, NULL);
         sqlite3_prepare_v2(dbObj, updateStmt.c_str(), updateStmt.size(), &update, NULL);
-        for(string &achvState: dataParts) {
-            auto stateParts= utility::split(achvState, ',');
+        for(auto achv: achvData.getInfo()) {
             UPSERT(insert);
             UPSERT(update);
         }

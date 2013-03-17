@@ -17,8 +17,9 @@ public:
 
     virtual void open(const string& dbURL, const string& user, const string& passwd) throw (runtime_error);
     virtual void close();
-    virtual string retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error);
-    virtual void saveAchievementData(const string& steamid64, const string& packName, const string& data) throw (runtime_error);
+    virtual Achievements retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error);
+    virtual void saveAchievementData(const string& steamid64, const string& packName, 
+            const Achievements achvData) throw(runtime_error);
 private:
     sqlite3 *dbObj;
 

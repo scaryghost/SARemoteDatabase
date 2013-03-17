@@ -8,18 +8,21 @@
 #include <stdexcept>
 #include <string>
 
+#include "Data/Achievements.h"
+
 namespace etsai {
 namespace saremotedatabase {
 
-using std::string;
 using std::runtime_error;
+using std::string;
 
 class DataChannel {
 public:
     virtual void open(const string& dbURL, const string& user, const string& passwd) throw(runtime_error)= 0;
     virtual void close()= 0;
-    virtual string retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error)= 0;
-    virtual void saveAchievementData(const string& steamid64, const string& packName, const string& data) throw(runtime_error)= 0;
+    virtual Achievements retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error)= 0;
+    virtual void saveAchievementData(const string& steamid64, const string& packName, 
+            const Achievements achvData) throw(runtime_error)= 0;
 };
 
 }
