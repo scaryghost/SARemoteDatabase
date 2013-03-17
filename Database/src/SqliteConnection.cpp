@@ -1,3 +1,7 @@
+#ifdef WIN32
+#pragma warning( disable : 4290 )
+#endif
+
 #include "Core/Utility.h"
 #include "Database/src/SqliteConnection.h"
 

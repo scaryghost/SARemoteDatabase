@@ -1,6 +1,10 @@
 #ifndef ETSAI_SAREMOTEDATABASE_OUTER
 #define ETSAI_SAREMOTEDATABASE_OUTER
 
+#ifdef WIN32
+#pragma warning( disable : 4290 )
+#endif
+
 #include <string>
 #include <stdexcept>
 

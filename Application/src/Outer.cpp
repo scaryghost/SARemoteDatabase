@@ -34,6 +34,7 @@ static void *dllHandle;
 #else
 static HINSTANCE dllHandle;
 typedef Connection* (__cdecl *CreateConnType)();
+using std::wstring;
 #endif
 
 #ifndef WIN32
@@ -78,8 +79,7 @@ void start(int port, const string& password, int timeout) {
 
 void loadDBLib(const string& dbLib) throw(runtime_error) {
 #ifdef WIN32
-    string bdLibWStr= wstring(dbLib.begin(), dbLib.end());
-    LPCWSTR dbLibWStr= dbLib.c_str();
+    LPCWSTR dbLibWStr= wstring(dbLib.begin(), dbLib.end()).c_str();
 #endif
     CreateConnType connCreator;
 
@@ -89,23 +89,28 @@ void loadDBLib(const string& dbLib) throw(runtime_error) {
     }
 #ifdef WIN32
     dllHandle= LoadLibrary(dbLibWStr);
+    if (!dllHandle) {
+        throw runtime_error("Error loading library: " + dbLib);
+    }
 #else
     dllHandle= dlopen(dbLib.c_str(), RTLD_LAZY);
-#endif
     if (!dllHandle) {
         throw runtime_error(dlerror());
     }
+#endif
+    
 #ifdef WIN32
     connCreator= reinterpret_cast<CreateConnType>(GetProcAddress(dllHandle, "createConnection"));
+    if(!connCreator) {
+        FreeLibrary(dllHandle);
+        throw runtime_error("Error loading function: createConnection");
+    }
 #else
     connCreator= reinterpret_cast<CreateConnType>(dlsym(dllHandle, "createConnection"));
-#endif
     if(!connCreator) {
-#ifdef WIN32
-        FreeLibrary(dllHandle);
-#endif
         throw runtime_error(dlerror());
     }
+#endif
     global::dbConn= connCreator();
 }
 

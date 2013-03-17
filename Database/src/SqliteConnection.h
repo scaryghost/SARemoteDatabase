@@ -1,6 +1,10 @@
 #ifndef ETSAI_SAREMOTEDATABASE_SQLITECONNECTION
 #define ETSAI_SAREMOTEDATABASE_SQLITECONNECTION
 
+#ifdef WIN32
+#pragma warning( disable : 4290 )
+#endif
+
 #include "Database/Connection.h"
 #include "sqlite3.h"
 

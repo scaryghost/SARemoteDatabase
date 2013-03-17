@@ -1,6 +1,10 @@
 #ifndef ETSAI_SAREMOTEDATABASE_CONNECTION
 #define ETSAI_SAREMOTEDATABASE_CONNECTION
 
+#ifdef WIN32
+#pragma warning( disable : 4290 )
+#endif
+
 #include <stdexcept>
 #include <string>
 
