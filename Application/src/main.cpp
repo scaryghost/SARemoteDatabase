@@ -4,6 +4,7 @@
 #include "Core/Global.h"
 #include "Application/Outer.h"
 
+#include <exception>
 #include <iostream>
 
 using namespace etsai::cpputilities;
@@ -59,6 +60,9 @@ int main(int argc, char **argv) {
     } catch (CppUtilitiesException &ex) {
         global::logger->log(Level::SEVERE, ex.what());
         return ex.getStatus();
+    } catch (std::exception &ex) {
+        global::logger->log(Level::SEVERE, ex.what());
+        return 1;
     }
 
     return 0;

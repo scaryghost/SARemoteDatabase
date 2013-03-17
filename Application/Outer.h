@@ -2,16 +2,18 @@
 #define ETSAI_SAREMOTEDATABASE_OUTER
 
 #include <string>
+#include <stdexcept>
 
 namespace etsai {
 namespace saremotedatabase {
 namespace outer {
 
 using std::string;
+using std::runtime_error;
 
 void start(int port, const string& password, int timeout);
 void initCtrlHandler();
-void loadDBLib(const string& dbLib);
+void loadDBLib(const string& dbLib) throw(runtime_error);
 
 }   //namespace outer
 }   //namespace saremotedatabase

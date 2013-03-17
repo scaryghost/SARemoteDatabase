@@ -9,6 +9,24 @@
 #include <windows.h> 
 #endif
 
+#define SAVE_OR_RETRIEVE(ec, len, func)\
+    if (authenticated) {\
+        try {\
+            bodyParts= utility::split(request.getBody(), '.');\
+            if (bodyParts.size() >= len) {\
+                global::dbConn->func;\
+            } else {\
+                throw runtime_error("Body data format not correct: " + request.getBody());\
+            }\
+            (*lastActiveTime)= system_clock::now();\
+        } catch (exception &ex) {\
+            global::logger->log(Level::SEVERE, ex.what());\
+            status= ec;\
+        }\
+    } else {\
+        pendingRequests.push_back(request);\
+    }\
+
 namespace etsai {
 namespace saremotedatabase {
 namespace tcplistener {
@@ -23,7 +41,7 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
     auto process= [&pendingRequests, &socket, &terminate, &authenticated, &lastActiveTime, &password](const Message& request) -> void {
         vector<string> bodyParts;
         Message response;
-        int status;
+        int status(0);
         string body;
 
         switch (request.getRequest()) {
@@ -33,36 +51,19 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                     body= "Invalid password";
                     status= 1;
                 } else {
-                    status= 0;
                     authenticated= true;
                     (*lastActiveTime)= system_clock::now();
                 }
                 break;
             case Message::RETRIEVE:
-                if (authenticated) {
-                    bodyParts= utility::split(request.getBody(), '.');
-                    if (bodyParts.size() >= 2) {
-                        body= global::dbConn->retrieveAchievementData(bodyParts[0], bodyParts[1]);
-                    }
-                    status= 0;
-                    (*lastActiveTime)= system_clock::now();
-                } else {
-                    pendingRequests.push_back(request);
-                }
+                SAVE_OR_RETRIEVE(3, 2, retrieveAchievementData(bodyParts[0], bodyParts[1]))
                 break;
             case Message::SAVE:
-                if (authenticated) {
-                    bodyParts= utility::split(request.getBody(), '.');
-                    if (bodyParts.size() >= 3) {
-                        global::dbConn->saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]);
-                    }
-                    status= 0;
-                    (*lastActiveTime)= system_clock::now();
-                } else {
-                    pendingRequests.push_back(request);
-                }
+                SAVE_OR_RETRIEVE(2, 3, saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]))
                 break;
             default:
+                global::logger->log(Level::SEVERE, "Unrecognized request");
+                status= 4;
                 break;
         }
         if (authenticated) {
@@ -88,8 +89,10 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         global::logger->log(Level::SEVERE, e.what());
     }
 
-    socket->close();
-    global::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
+    if (!socket->isClosed()) {
+        socket->close();
+        global::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
+    }
 }
 
 void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime,  int timeout) {
@@ -114,9 +117,8 @@ void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
     }
     if (!socket->isClosed()) {
         global::logger->log(Level::INFO, "Idle max time reached.  Force closing the connection from " + socket->getAddressPort());
+        socket->close();
     }
-    socket->close();
-    
 }
 
 }

@@ -62,7 +62,7 @@ void start(int port, const string& password, int timeout) {
     stringstream msg;
 
     msg << "Listening on port: " << port;
-    global::logger->log(Level::INFO, msg.str());
+    global::logger->log(Level::CONFIG, msg.str());
     server.bind(port);
     while(true) {
         shared_ptr<Socket> client(server.accept());
@@ -76,7 +76,7 @@ void start(int port, const string& password, int timeout) {
     }
 }
 
-void loadDBLib(const string& dbLib) {
+void loadDBLib(const string& dbLib) throw(runtime_error) {
 #ifdef WIN32
     string bdLibWStr= wstring(dbLib.begin(), dbLib.end());
     LPCWSTR dbLibWStr= dbLib.c_str();
@@ -93,9 +93,7 @@ void loadDBLib(const string& dbLib) {
     dllHandle= dlopen(dbLib.c_str(), RTLD_LAZY);
 #endif
     if (!dllHandle) {
-        global::logger->log(Level::WARNING, "Error!  Cannot load db library ");
-        exit(1);
-        return;
+        throw runtime_error(dlerror());
     }
 #ifdef WIN32
     connCreator= reinterpret_cast<CreateConnType>(GetProcAddress(dllHandle, "createConnection"));
@@ -106,9 +104,7 @@ void loadDBLib(const string& dbLib) {
 #ifdef WIN32
         FreeLibrary(dllHandle);
 #endif
-        global::logger->log(Level::WARNING, "Error!  Unable to load function createConnection");
-        exit(1);
-        return;
+        throw runtime_error(dlerror());
     }
     global::dbConn= connCreator();
 }
