@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
         .addOption(Option("-v", [](const Arguments &args) -> void {
             std::cout << "saremotedatabase " << version << std::endl;
             std::cout << "git page: https://github.com/scaryghost/SARemoteDatabase" << std::endl;
+            exit(0);
         }).withLongOpt("--version").withDescription("Prints version and exits"))
         .addOption(Option("--log-dir", 0, 1, [&logDir](const Arguments &args) -> void {
             logDir= args.asString(0);
