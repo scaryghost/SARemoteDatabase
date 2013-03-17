@@ -16,9 +16,12 @@ int main(int argc, char **argv) {
     int port, timeout= 60;
     string dbURL, dbUser, dbPasswd, dbLib, password;
 
-    global::logger= Logger::getLogger("saremotedatabase");
 
     try {
+        global::logger= Logger::getLogger("saremotedatabase");
+        global::logger->addHandler(new ConsoleHandler());
+        global::logger->addHandler(new FileHandler("log"));
+
         CliBuilder *cli= CliBuilder::getBuilder();
         (*cli).addOption(Option("-tcpport", 0, 1, [&port](const Arguments &args) -> void {
             port= args.asInteger(0);
@@ -40,10 +43,10 @@ int main(int argc, char **argv) {
         }).withArgName("password").withDescription("Password for logging into the database"))
         .addOption(Option("-dblib", 0, 1, [&dbLib](const Arguments &args) -> void {
             dbLib= args.asString(0);
-        }).withArgName("libname").withDescription("Dynamic library to process achievement data, replacing the default sqlite code"))
+        }).withArgName("libname").withDescription("Custom dll/so to process data in place of sqlite"))
         .addOption(Option("-timeout", 0, 1, [&timeout](const Arguments &args) -> void {
             timeout= args.asInteger(0);
-        }).withArgName("sec").withDescription("How long (in sec) before an idle connection auto closes.  Use 0 to leave the connection open."))
+        }).withArgName("sec").withDescription("How long to wait (in sec) before closing idle connection"))
         .addOption(Option("-v", [](const Arguments &args) -> void {
             std::cout << "saremotedatabase " << version << std::endl;
             std::cout << "git page: https://github.com/scaryghost/SARemoteDatabase" << std::endl;
@@ -51,8 +54,6 @@ int main(int argc, char **argv) {
         .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <password> [options]");
         cli->parse(argc, argv);
 
-        global::logger->addHandler(new ConsoleHandler());
-        global::logger->addHandler(new FileHandler("log"));
         outer::loadDBLib(dbLib);
         global::dbConn->open(dbURL, dbUser, dbPasswd);
         outer::initCtrlHandler();

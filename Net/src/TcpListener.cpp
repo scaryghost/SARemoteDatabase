@@ -17,6 +17,7 @@
             (*lastActiveTime)= system_clock::now();\
         } catch (exception &ex) {\
             global::logger->log(Level::SEVERE, ex.what());\
+            body= ex.what();\
             status= ec;\
         }\
     } else {\
@@ -58,14 +59,15 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                 SAVE_OR_RETRIEVE(2, global::dbConn->saveAchievementData(bodyParts.at(0), bodyParts.at(1), bodyParts.at(2)))
                 break;
             default:
-                global::logger->log(Level::SEVERE, "Unrecognized request");
+                global::logger->log(Level::INFO, "Unrecognized request");
+                body= "Unrecognized request";
                 status= 4;
                 break;
         }
         if (authenticated) {
             response.setType(Message::RESPONSE).setStatus(status).setBody(body).setId(request.getId());
             socket->write(response.toString() + "\n");
-            global::logger->log(Level::INFO, "response: " + response.toString());
+            global::logger->log(Level::INFO, socket->getAddressPort() + " - response= " + response.toString());
         }
     };
 
@@ -73,7 +75,7 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         global::logger->log(Level::INFO, "Waiting for a request from " + socket->getAddressPort());
         while(!terminate && (line= socket->readLine()) != "") {
             try {
-                global::logger->log(Level::INFO, "request: " + line);
+                global::logger->log(Level::INFO, socket->getAddressPort() + " - request= " + line);
                 process(Message::parse(line));
                 if (authenticated && !pendingRequests.empty()) {
                     for(Message &msg: pendingRequests) {
@@ -116,7 +118,7 @@ void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         
     }
     if (!socket->isClosed()) {
-        global::logger->log(Level::INFO, "Idle max time reached.  Force closing the connection from " + socket->getAddressPort());
+        global::logger->log(Level::INFO, "Max idle time reached, force closing the connection from " + socket->getAddressPort());
         socket->close();
     }
 }
