@@ -21,22 +21,22 @@ Message Message::parse(const string& msg) {
     int status= -1;
 
     auto parts= utility::split(msg, '|');
-    auto header= utility::split(parts[0], ',');
+    auto header= utility::split(parts.at(0), ',');
     
-    if (header[2] == "request") {
+    if (header.at(2) == "request") {
         type= REQUEST;
-        if (parts[2] == "connect") {
+        if (parts.at(2) == "connect") {
             request= CONNECT;
-        } else if (parts[2] == "save") {
+        } else if (parts.at(2) == "save") {
             request= SAVE;
-        } else if (parts[2] == "retrieve") {
+        } else if (parts.at(2) == "retrieve") {
             request= RETRIEVE;
         }
-    } else if (header[2] == "response") {
+    } else if (header.at(2) == "response") {
         type= RESPONSE;
-        status= atoi(parts[2].c_str());
+        status= atoi(parts.at(2).c_str());
     }
-    msgObj.setType(type).setRequest(request).setStatus(status).setBody(parts[3]).setId(atoi(parts[1].c_str()));
+    msgObj.setType(type).setRequest(request).setStatus(status).setBody(parts.at(3)).setId(atoi(parts.at(1).c_str()));
     return msgObj;
 }
 
@@ -55,7 +55,7 @@ Message& Message::setRequest(Request request) {
 }
 
 Message& Message::setStatus(int status) {
-    this->request= request;
+    this->status= status;
     return *this;
 }
 

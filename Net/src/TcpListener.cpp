@@ -9,15 +9,11 @@
 #include <windows.h> 
 #endif
 
-#define SAVE_OR_RETRIEVE(ec, len, func)\
+#define SAVE_OR_RETRIEVE(ec, func)\
     if (authenticated) {\
         try {\
             bodyParts= utility::split(request.getBody(), '.');\
-            if (bodyParts.size() >= len) {\
-                global::dbConn->func;\
-            } else {\
-                throw runtime_error("Body data format not correct: " + request.getBody());\
-            }\
+            func;\
             (*lastActiveTime)= system_clock::now();\
         } catch (exception &ex) {\
             global::logger->log(Level::SEVERE, ex.what());\
@@ -56,10 +52,10 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                 }
                 break;
             case Message::RETRIEVE:
-                SAVE_OR_RETRIEVE(3, 2, retrieveAchievementData(bodyParts[0], bodyParts[1]))
+                SAVE_OR_RETRIEVE(3, body= global::dbConn->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1)))
                 break;
             case Message::SAVE:
-                SAVE_OR_RETRIEVE(2, 3, saveAchievementData(bodyParts[0], bodyParts[1], bodyParts[2]))
+                SAVE_OR_RETRIEVE(2, global::dbConn->saveAchievementData(bodyParts.at(0), bodyParts.at(1), bodyParts.at(2)))
                 break;
             default:
                 global::logger->log(Level::SEVERE, "Unrecognized request");
@@ -76,13 +72,17 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
     try {
         global::logger->log(Level::INFO, "Waiting for a request from " + socket->getAddressPort());
         while(!terminate && (line= socket->readLine()) != "") {
-            global::logger->log(Level::INFO, "request: " + line);
-            process(Message::parse(line));
-            if (authenticated && !pendingRequests.empty()) {
-                for(Message &msg: pendingRequests) {
-                    process(msg);
+            try {
+                global::logger->log(Level::INFO, "request: " + line);
+                process(Message::parse(line));
+                if (authenticated && !pendingRequests.empty()) {
+                    for(Message &msg: pendingRequests) {
+                        process(msg);
+                    }
+                    pendingRequests.clear();
                 }
-                pendingRequests.clear();
+            } catch (exception &ex) {
+                global::logger->log(Level::SEVERE, ex.what());
             }
         }
     } catch (exception &e) {
