@@ -14,13 +14,11 @@ const char* version= "1.0.0";
 
 int main(int argc, char **argv) {
     int port, timeout= 60;
-    string dbURL, dbUser, dbPasswd, dbLib, password;
-
+    string dbURL, dbUser, dbPasswd, dbLib, password, logDir("log");
 
     try {
         global::logger= Logger::getLogger("saremotedatabase");
         global::logger->addHandler(new ConsoleHandler());
-        global::logger->addHandler(new FileHandler("log"));
 
         CliBuilder *cli= CliBuilder::getBuilder();
         (*cli).addOption(Option("-tcpport", 0, 1, [&port](const Arguments &args) -> void {
@@ -51,9 +49,13 @@ int main(int argc, char **argv) {
             std::cout << "saremotedatabase " << version << std::endl;
             std::cout << "git page: https://github.com/scaryghost/SARemoteDatabase" << std::endl;
         }).withLongOpt("--version").withDescription("Prints version and exits"))
+        .addOption(Option("-logdir", 0, 1, [&logDir](const Arguments &args) -> void {
+            logDir= args.asString(0);
+        }).withArgName("dir").withDescription("Directory to store log files in"))
         .setUsage("saremotedatabase -dburl <url> -tcpport <number> -passwd <password> [options]");
         cli->parse(argc, argv);
 
+        global::logger->addHandler(new FileHandler(logDir));
         outer::loadDBLib(dbLib);
         global::dbConn->open(dbURL, dbUser, dbPasswd);
         outer::initCtrlHandler();
