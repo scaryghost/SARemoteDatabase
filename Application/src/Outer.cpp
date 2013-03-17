@@ -79,7 +79,8 @@ void start(int port, const string& password, int timeout) {
 
 void loadDBLib(const string& dbLib) throw(runtime_error) {
 #ifdef WIN32
-    LPCWSTR dbLibWStr= wstring(dbLib.begin(), dbLib.end()).c_str();
+    wstring temp= wstring(dbLib.begin(), dbLib.end());
+    LPCWSTR dbLibWStr= temp.c_str();
 #endif
     CreateConnType connCreator;
 
