@@ -30,10 +30,10 @@ string SqliteDataChannel::addPackName= "insert into pack (name) values (?)";
 SqliteDataChannel::SqliteDataChannel() {
 }
 
-void SqliteDataChannel::open(const string& dbURL, const string& user, const string& passwd) throw (runtime_error) {
+void SqliteDataChannel::open(const string& dataURL, const string& dataUser, const string& dataPw) throw (runtime_error) {
     int status;
 
-    status= sqlite3_open_v2(dbURL.c_str(), &dbObj, SQLITE_OPEN_READWRITE|SQLITE_OPEN_NOMUTEX, NULL);
+    status= sqlite3_open_v2(dataURL.c_str(), &dbObj, SQLITE_OPEN_READWRITE|SQLITE_OPEN_NOMUTEX, NULL);
     if (status != SQLITE_OK) {
         throw runtime_error(sqlite3_errmsg(dbObj));
     }

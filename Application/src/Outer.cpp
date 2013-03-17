@@ -77,24 +77,24 @@ void start(int port, const string& password, int timeout) {
     }
 }
 
-void loadDBLib(const string& dbLib) throw(runtime_error) {
+void loadDBLib(const string& dataLib) throw(runtime_error) {
 #ifdef WIN32
-    wstring temp= wstring(dbLib.begin(), dbLib.end());
-    LPCWSTR dbLibWStr= temp.c_str();
+    wstring temp= wstring(dataLib.begin(), dataLib.end());
+    LPCWSTR dataLibWStr= temp.c_str();
 #endif
     CreateDataChannelType channelCreator;
 
-    if (dbLib.empty()) {
+    if (dataLib.empty()) {
         global::dataChannel= new SqliteDataChannel();
         return;
     }
 #ifdef WIN32
-    dllHandle= LoadLibrary(dbLibWStr);
+    dllHandle= LoadLibrary(dataLibWStr);
     if (!dllHandle) {
-        throw runtime_error("Error loading library: " + dbLib);
+        throw runtime_error("Error loading library: " + dataLib);
     }
 #else
-    dllHandle= dlopen(dbLib.c_str(), RTLD_LAZY);
+    dllHandle= dlopen(dataLib.c_str(), RTLD_LAZY);
     if (!dllHandle) {
         throw runtime_error(dlerror());
     }

@@ -17,7 +17,7 @@ using std::runtime_error;
 
 void start(int port, const string& password, int timeout);
 void initCtrlHandler();
-void loadDBLib(const string& dbLib) throw(runtime_error);
+void loadDBLib(const string& dataLib) throw(runtime_error);
 
 }   //namespace outer
 }   //namespace saremotedatabase

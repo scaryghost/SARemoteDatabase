@@ -14,7 +14,7 @@ const char* version= "1.0.0";
 
 int main(int argc, char **argv) {
     int port, timeout= 60;
-    string dbURL, dbUser, dbPasswd, dbLib, password, logDir("log");
+    string dataURL, dataUser, dataPasswd, dataLib, password, logDir("log");
 
     try {
         global::logger= Logger::getLogger("saremotedatabase");
@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
         (*cli).addOption(Option("--tcp-port", 0, 1, [&port](const Arguments &args) -> void {
             port= args.asInteger(0);
         }).withArgName("number").withDescription("TCP port to listen on for requests").withRequired(true))
-        .addOption(Option("--data-url", 0, 1, [&dbURL](const Arguments &args) -> void {
-            dbURL= args.asString(0);
+        .addOption(Option("--data-url", 0, 1, [&dataURL](const Arguments &args) -> void {
+            dataURL= args.asString(0);
         }).withArgName("url").withDescription("URL to where the achievement data is stored").withRequired(true))
         .addOption(Option("--server-pw", 0, 1, [&password](const Arguments &args) -> void {
             password= args.asString(0);
@@ -33,14 +33,14 @@ int main(int argc, char **argv) {
         .addOption(Option("-h", [&cli](const Arguments &args) -> void {
             cli->displayUsage();
         }).withLongOpt("--help").withDescription("Displays this help message and exits"))
-        .addOption(Option("--data-user", 0, 1, [&dbUser](const Arguments &args) -> void {
-            dbUser= args.asString(0);
+        .addOption(Option("--data-user", 0, 1, [&dataUser](const Arguments &args) -> void {
+            dataUser= args.asString(0);
         }).withArgName("username").withDescription("Username to access achievement data"))
-        .addOption(Option("--data-pw", 0, 1, [&dbPasswd](const Arguments &args) -> void {
-            dbPasswd= args.asString(0);
+        .addOption(Option("--data-pw", 0, 1, [&dataPasswd](const Arguments &args) -> void {
+            dataPasswd= args.asString(0);
         }).withArgName("password").withDescription("Password to access achievement data"))
-        .addOption(Option("--data-lib", 0, 1, [&dbLib](const Arguments &args) -> void {
-            dbLib= args.asString(0);
+        .addOption(Option("--data-lib", 0, 1, [&dataLib](const Arguments &args) -> void {
+            dataLib= args.asString(0);
         }).withArgName("libname").withDescription("Custom dll/so to process data instead of sqlite"))
         .addOption(Option("--connect-timeout", 0, 1, [&timeout](const Arguments &args) -> void {
             timeout= args.asInteger(0);
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
         cli->parse(argc, argv);
 
         global::logger->addHandler(new FileHandler(logDir));
-        outer::loadDBLib(dbLib);
-        global::dataChannel->open(dbURL, dbUser, dbPasswd);
+        outer::loadDBLib(dataLib);
+        global::dataChannel->open(dataURL, dataUser, dataPasswd);
         outer::initCtrlHandler();
         outer::start(port, password, timeout);
     } catch (CppUtilitiesException &ex) {
