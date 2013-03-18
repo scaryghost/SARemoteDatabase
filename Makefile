@@ -16,16 +16,19 @@ ifndef SQLITE_PATH
 endif
 	$(CPPC) -c $(CPP_FLAGS) $(INC_FLAGS) $< -o $@
 
-all: $(DIST)/$(BIN)
+all: $(BIN)
 
-$(DIST)/$(BIN): $(OBJS)
-	if [ ! -e $(DIST) ]; then \
-	    mkdir $(DIST); \
-	fi
+$(BIN): $(OBJS)
 	$(CPPC) -o $@ $(OBJS) $(INC_FLAGS) $(LIB_FLAGS) $(EXT_LIBS) -rdynamic
 
 prebuild:
 	make -C CppUtilities
 
 clean:
-	rm -f -R $(DIST) $(OBJS)
+	rm -f -R $(DIST) $(OBJS) $(BIN)
+
+release: $(BIN) $(SHARE)
+	rm -Rf $(DIST)
+	mkdir $(DIST)
+	cp $(word 1, $?) $(DIST)/.
+	cp $(word 2, $?) $(DIST)/. -R
