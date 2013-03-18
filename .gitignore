@@ -2,3 +2,5 @@
 *.a
 *.lib
 *.swp
+sqlite3/
+dist/
