@@ -23,6 +23,7 @@
     } else {\
         pendingRequests.push_back(request);\
     }\
+    break
 
 namespace etsai {
 namespace saremotedatabase {
@@ -53,12 +54,9 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                 }
                 break;
             case Message::RETRIEVE:
-                SAVE_OR_RETRIEVE(3, body= (global::dataChannel->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1))).serialize())
-                break;
+                SAVE_OR_RETRIEVE(3, body= (global::dataChannel->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1))).serialize());
             case Message::SAVE:
-                SAVE_OR_RETRIEVE(2, global::dataChannel->saveAchievementData(bodyParts.at(0), bodyParts.at(1), 
-                    Achievements(bodyParts.at(2))))
-                break;
+                SAVE_OR_RETRIEVE(2, global::dataChannel->saveAchievementData(bodyParts.at(0), bodyParts.at(1), Achievements(bodyParts.at(2))));
             default:
                 global::logger->log(Level::INFO, "Unrecognized request");
                 body= "Unrecognized request";

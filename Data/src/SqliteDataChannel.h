@@ -23,7 +23,7 @@ public:
 private:
     sqlite3 *dbObj;
 
-    static string retrieveQuery, saveStmt, updateStmt, addPackName;
+    static string retrieveQuery, insertData, updateData, addPackName, addSteamID64;
 };
 
 }
