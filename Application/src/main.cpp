@@ -58,8 +58,10 @@ int main(int argc, char **argv) {
 
         global::logger->addHandler(new FileHandler(logDir));
         outer::loadDBLib(dataLib);
-        global::dataChannel->open(dataURL, dataUser, dataPasswd);
         outer::initCtrlHandler();
+
+        global::dataChannel->open(dataURL, dataUser, dataPasswd);
+        global::logger->log(Level::CONFIG, "Achievement data URL: " + dataURL);
         outer::start(port, password, timeout);
     } catch (CppUtilitiesException &ex) {
         global::logger->log(Level::SEVERE, ex.what());

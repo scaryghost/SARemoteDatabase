@@ -62,7 +62,7 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 void start(int port, const string& password, int timeout) {
     stringstream msg;
 
-    msg << "Listening on port: " << port;
+    msg << "Listening on tcp port: " << port;
     global::logger->log(Level::CONFIG, msg.str());
     server.bind(port);
     while(true) {
