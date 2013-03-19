@@ -30,13 +30,12 @@ namespace saremotedatabase {
 namespace tcplistener {
 
 using std::vector;
-
-void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime, const string& password) {
+void handler(shared_ptr<Socket> socket, shared_ptr<DataChannel> dataChnl, shared_ptr<time_point<system_clock> > lastActiveTime, const string& password) {
     bool terminate(false), authenticated(false);
     string line;
     vector<Message> pendingRequests;
     
-    auto process= [&pendingRequests, &socket, &terminate, &authenticated, &lastActiveTime, &password](const Message& request) -> void {
+    auto process= [&pendingRequests, &socket, &terminate, &authenticated, &lastActiveTime, &password, &dataChnl](const Message& request) -> void {
         vector<string> bodyParts;
         Message response;
         int status(0);
@@ -54,9 +53,9 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
                 }
                 break;
             case Message::RETRIEVE:
-                SAVE_OR_RETRIEVE(3, body= (global::dataChannel->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1))).serialize());
+                SAVE_OR_RETRIEVE(3, body= (dataChnl->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1))).serialize());
             case Message::SAVE:
-                SAVE_OR_RETRIEVE(2, global::dataChannel->saveAchievementData(bodyParts.at(0), bodyParts.at(1), Achievements(bodyParts.at(2))));
+                SAVE_OR_RETRIEVE(2, dataChnl->saveAchievementData(bodyParts.at(0), bodyParts.at(1), Achievements(bodyParts.at(2))));
             default:
                 global::logger->log(Level::INFO, "Unrecognized request");
                 body= "Unrecognized request";
@@ -94,9 +93,10 @@ void handler(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         socket->close();
         global::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
     }
+    dataChnl->close();
 }
 
-void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime,  int timeout) {
+void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime, int timeout) {
 #ifndef WIN32
     int delta(0);
     timespec sleepTime= {timeout, 0};
@@ -116,7 +116,7 @@ void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
 #endif
         
     }
-    if (!socket->isClosed()) {
+    if (timeout > 0 && !socket->isClosed()) {
         global::logger->log(Level::INFO, "Max idle time reached, force closing the connection from " + socket->getAddressPort());
         socket->close();
     }

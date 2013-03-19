@@ -1,6 +1,7 @@
 #include "Application/Outer.h"
 
 #include "Core/Global.h"
+#include "Data/DataChannel.h"
 #include "Data/src/SqliteDataChannel.h"
 #include "Net/TcpListener.h"
 
@@ -26,22 +27,26 @@ using namespace std::chrono;
 using std::shared_ptr;
 using std::thread;
 
-static ServerSocket server;
 #ifndef WIN32
 static struct sigaction sigIntHandler;
 typedef DataChannel* (*CreateDataChannelType)();
-static void *dllHandle;
+static void *dllHandle= NULL;
 #else
-static HINSTANCE dllHandle;
+static HINSTANCE dllHandle= NULL;
 typedef DataChannel* (__cdecl *CreateDataChannelType)();
 using std::wstring;
 #endif
 
+static ServerSocket server;
+static CreateDataChannelType channelCreator= NULL;
+
 #ifndef WIN32
 static void ctrlHandler(int s) {
     global::logger->log(Level::INFO, "Shutting down...");
-    global::dataChannel->close();
     server.close();
+    if (dllHandle) {
+        dlclose(dllHandle);
+    }
 }
 #else
 static BOOL ctrlHandler(DWORD fdwCtrlType) {  
@@ -49,8 +54,8 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT: 
             global::logger->log(Level::INFO, "Shutting down...");
-            global::dataChannel->close();
             server.close();
+            FreeLibrary(dllHandle);
             break;
         default: 
             break;
@@ -59,19 +64,29 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 } 
 #endif
 
-void start(int port, const string& password, int timeout) {
+void start(Properties &serverProps) {
     stringstream msg;
-
-    msg << "Listening on tcp port: " << port;
+    msg << "Listening on tcp port: " << serverProps.port;
+    global::logger->log(Level::CONFIG, "Achievement data URL: " + serverProps.dataURL);
     global::logger->log(Level::CONFIG, msg.str());
-    server.bind(port);
+
+    server.bind(serverProps.port);
     while(true) {
         shared_ptr<Socket> client(server.accept());
         shared_ptr<time_point<system_clock> > lastActiveTime(new time_point<system_clock>);
+        shared_ptr<DataChannel> dataChnl;
 
         global::logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
-        thread th(tcplistener::handler, client, lastActiveTime, password);
-        thread th2(tcplistener::timeout, client, lastActiveTime, timeout);
+
+        if (!channelCreator) {
+            dataChnl.reset(new SqliteDataChannel());
+        } else {
+            dataChnl.reset(channelCreator());
+        }   
+        dataChnl->open(serverProps.dataURL, serverProps.dataUser, serverProps.dataPw);
+
+        thread th(tcplistener::handler, client, dataChnl, lastActiveTime, serverProps.password);
+        thread th2(tcplistener::timeout, client, lastActiveTime, serverProps.timeout);
         th.detach();
         th2.detach();
     }
@@ -82,10 +97,8 @@ void loadDBLib(const string& dataLib) throw(runtime_error) {
     wstring temp= wstring(dataLib.begin(), dataLib.end());
     LPCWSTR dataLibWStr= temp.c_str();
 #endif
-    CreateDataChannelType channelCreator;
 
     if (dataLib.empty()) {
-        global::dataChannel= new SqliteDataChannel();
         return;
     }
 #ifdef WIN32
@@ -93,26 +106,21 @@ void loadDBLib(const string& dataLib) throw(runtime_error) {
     if (!dllHandle) {
         throw runtime_error("Error loading library: " + dataLib);
     }
-#else
-    dllHandle= dlopen(dataLib.c_str(), RTLD_LAZY);
-    if (!dllHandle) {
-        throw runtime_error(dlerror());
-    }
-#endif
-    
-#ifdef WIN32
     channelCreator= reinterpret_cast<CreateDataChannelType>(GetProcAddress(dllHandle, "createDataChannel"));
     if(!channelCreator) {
         FreeLibrary(dllHandle);
         throw runtime_error("Error loading function: createDataChannel");
     }
 #else
+    dllHandle= dlopen(dataLib.c_str(), RTLD_LAZY);
+    if (!dllHandle) {
+        throw runtime_error(dlerror());
+    }
     channelCreator= reinterpret_cast<CreateDataChannelType>(dlsym(dllHandle, "createDataChannel"));
     if(!channelCreator) {
         throw runtime_error(dlerror());
     }
 #endif
-    global::dataChannel= channelCreator();
 }
 
 void initCtrlHandler() {

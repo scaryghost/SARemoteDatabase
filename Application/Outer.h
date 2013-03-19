@@ -15,7 +15,16 @@ namespace outer {
 using std::string;
 using std::runtime_error;
 
-void start(int port, const string& password, int timeout);
+struct Properties {
+    int timeout;
+    int port;
+    string password;
+    string dataURL;
+    string dataUser;
+    string dataPw;
+};
+
+void start(Properties &serverProps);
 void initCtrlHandler();
 void loadDBLib(const string& dataLib) throw(runtime_error);
 

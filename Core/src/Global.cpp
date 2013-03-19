@@ -5,7 +5,6 @@ namespace saremotedatabase {
 namespace global {
 
 Logger* logger;
-DataChannel* dataChannel;
 
 }
 }
