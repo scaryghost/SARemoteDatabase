@@ -11,6 +11,8 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <vector>
+
 #ifdef WIN32
 #include <windows.h> 
 #else
@@ -37,25 +39,33 @@ typedef DataChannel* (__cdecl *CreateDataChannelType)();
 using std::wstring;
 #endif
 
+#define HANDlER_ACTION(freeLibFunc)\
+    global::logger->log(Level::INFO, "Shutting down...");\
+    server.close();\
+    if (dllHandle) {\
+        freeLibFunc(dllHandle);\
+    }\
+    for(auto &channel: openChannels) {\
+        if (!channel->isOpen()) {\
+            channel->close();\
+        }\
+    }
+
+
 static ServerSocket server;
 static CreateDataChannelType channelCreator= NULL;
+static vector<shared_ptr<DataChannel> > openChannels;
 
 #ifndef WIN32
 static void ctrlHandler(int s) {
-    global::logger->log(Level::INFO, "Shutting down...");
-    server.close();
-    if (dllHandle) {
-        dlclose(dllHandle);
-    }
+    HANDlER_ACTION(dlclose)
 }
 #else
 static BOOL ctrlHandler(DWORD fdwCtrlType) {  
     switch(fdwCtrlType) { 
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT: 
-            global::logger->log(Level::INFO, "Shutting down...");
-            server.close();
-            FreeLibrary(dllHandle);
+            HANDlER_ACTION(FreeLibrary)
             break;
         default: 
             break;
@@ -65,6 +75,8 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 #endif
 
 void start(Properties &serverProps) {
+    size_t index, len;
+
     stringstream msg;
     msg << "Listening on tcp port: " << serverProps.port;
     global::logger->log(Level::CONFIG, "Achievement data URL: " + serverProps.dataURL);
@@ -72,6 +84,7 @@ void start(Properties &serverProps) {
 
     server.bind(serverProps.port);
     while(true) {
+        global::logger->log(Level::INFO, "Waiting for connection...");
         shared_ptr<Socket> client(server.accept());
         shared_ptr<time_point<system_clock> > lastActiveTime(new time_point<system_clock>);
         shared_ptr<DataChannel> dataChnl;
@@ -89,6 +102,18 @@ void start(Properties &serverProps) {
         thread th2(tcplistener::timeout, client, lastActiveTime, serverProps.timeout);
         th.detach();
         th2.detach();
+
+        index= 0;
+        len= openChannels.size();
+        while(index < len) {
+            if (!openChannels[index]->isOpen()) {
+                openChannels.erase(openChannels.begin() + index);
+                len--;
+            } else {
+                index++;
+            }
+        }
+        openChannels.push_back(dataChnl);
     }
 }
 

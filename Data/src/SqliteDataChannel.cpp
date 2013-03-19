@@ -34,7 +34,11 @@ string SqliteDataChannel::updateData= "update data set completed=?, progress=? w
 string SqliteDataChannel::addPackName= "insert or ignore into pack (name) values (?)";
 string SqliteDataChannel::addSteamID64= "insert or ignore into user (steamid64) values (?)";
 
-SqliteDataChannel::SqliteDataChannel() {
+SqliteDataChannel::SqliteDataChannel() : dbObj(NULL) {
+}
+
+bool SqliteDataChannel::isOpen() const {
+    return dbObj != NULL;
 }
 
 void SqliteDataChannel::open(const string& dataURL, const string& dataUser, const string& dataPw) throw (runtime_error) {
@@ -46,6 +50,7 @@ void SqliteDataChannel::open(const string& dataURL, const string& dataUser, cons
 
 void SqliteDataChannel::close() {
     sqlite3_close(dbObj);
+    dbObj= NULL;
 }
 
 Achievements SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {

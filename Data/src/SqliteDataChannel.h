@@ -15,6 +15,7 @@ class SqliteDataChannel : public DataChannel {
 public:
     SqliteDataChannel();
 
+    virtual bool isOpen() const;
     virtual void open(const string& dataURL, const string& dataUser, const string& dataPw) throw (runtime_error);
     virtual void close();
     virtual Achievements retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error);
@@ -22,7 +23,6 @@ public:
             const Achievements achvData) throw(runtime_error);
 private:
     sqlite3 *dbObj;
-
     static string retrieveQuery, insertData, updateData, addPackName, addSteamID64;
 };
 
