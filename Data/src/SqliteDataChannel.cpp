@@ -37,10 +37,6 @@ string SqliteDataChannel::addSteamID64= "insert or ignore into user (steamid64) 
 SqliteDataChannel::SqliteDataChannel() : dbObj(NULL) {
 }
 
-bool SqliteDataChannel::isOpen() const {
-    return dbObj != NULL;
-}
-
 void SqliteDataChannel::open(const string& dataURL, const string& dataUser, const string& dataPw) throw (runtime_error) {
     if (sqlite3_open_v2(dataURL.c_str(), &dbObj, SQLITE_OPEN_READWRITE|SQLITE_OPEN_NOMUTEX, NULL) != SQLITE_OK) {
         throw runtime_error(sqlite3_errmsg(dbObj));

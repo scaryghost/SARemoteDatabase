@@ -40,32 +40,27 @@ using std::wstring;
 #endif
 
 #define HANDlER_ACTION(freeLibFunc)\
-    global::logger->log(Level::INFO, "Shutting down...");\
-    server.close();\
     if (dllHandle) {\
         freeLibFunc(dllHandle);\
     }\
-    for(auto &channel: openChannels) {\
-        if (!channel->isOpen()) {\
-            channel->close();\
-        }\
-    }
-
+    global::logger->log(Level::INFO, "Shutting down...");\
+    server.close();\
+    dataChnl->close()
 
 static ServerSocket server;
 static CreateDataChannelType channelCreator= NULL;
-static vector<shared_ptr<DataChannel> > openChannels;
+static shared_ptr<DataChannel> dataChnl;
 
 #ifndef WIN32
 static void ctrlHandler(int s) {
-    HANDlER_ACTION(dlclose)
+    HANDlER_ACTION(dlclose);
 }
 #else
 static BOOL ctrlHandler(DWORD fdwCtrlType) {  
     switch(fdwCtrlType) { 
         case CTRL_C_EVENT:
         case CTRL_CLOSE_EVENT: 
-            HANDlER_ACTION(FreeLibrary)
+            HANDlER_ACTION(FreeLibrary);
             break;
         default: 
             break;
@@ -75,45 +70,29 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 #endif
 
 void start(Properties &serverProps) {
-    size_t index, len;
-
     stringstream msg;
     msg << "Listening on tcp port: " << serverProps.port;
     global::logger->log(Level::CONFIG, "Achievement data URL: " + serverProps.dataURL);
     global::logger->log(Level::CONFIG, msg.str());
 
+    if (!channelCreator) {
+        dataChnl.reset(new SqliteDataChannel());
+    } else {
+        dataChnl.reset(channelCreator());
+    }   
+    dataChnl->open(serverProps.dataURL, serverProps.dataUser, serverProps.dataPw);
+
     server.bind(serverProps.port);
     while(true) {
-        global::logger->log(Level::INFO, "Waiting for connection...");
         shared_ptr<Socket> client(server.accept());
         shared_ptr<time_point<system_clock> > lastActiveTime(new time_point<system_clock>);
-        shared_ptr<DataChannel> dataChnl;
 
         global::logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
-
-        if (!channelCreator) {
-            dataChnl.reset(new SqliteDataChannel());
-        } else {
-            dataChnl.reset(channelCreator());
-        }   
-        dataChnl->open(serverProps.dataURL, serverProps.dataUser, serverProps.dataPw);
 
         thread th(tcplistener::handler, client, dataChnl, lastActiveTime, serverProps.password);
         thread th2(tcplistener::timeout, client, lastActiveTime, serverProps.timeout);
         th.detach();
         th2.detach();
-
-        index= 0;
-        len= openChannels.size();
-        while(index < len) {
-            if (!openChannels[index]->isOpen()) {
-                openChannels.erase(openChannels.begin() + index);
-                len--;
-            } else {
-                index++;
-            }
-        }
-        openChannels.push_back(dataChnl);
     }
 }
 

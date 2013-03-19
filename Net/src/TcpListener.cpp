@@ -93,7 +93,6 @@ void handler(shared_ptr<Socket> socket, shared_ptr<DataChannel> dataChnl, shared
         socket->close();
         global::logger->log(Level::INFO, "Connection to " + socket->getAddressPort() + " closed");
     }
-    dataChnl->close();
 }
 
 void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > lastActiveTime, int timeout) {
