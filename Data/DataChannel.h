@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "Data/Achievements.h"
+#include "Data/AchievementPack.h"
 
 namespace etsai {
 namespace saremotedatabase {
@@ -40,7 +40,7 @@ public:
      * @param   packName            Achievement pack name to lookup
      * @throw   runtime_error       If an error occured during the retrieval
      */
-    virtual Achievements retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error)= 0;
+    virtual AchievementPack retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error)= 0;
     /**
      * Save the achievement data
      * @param   steamid64           Owner's steamid64
@@ -49,7 +49,7 @@ public:
      * @throw   runtime_error       If the data was unable to be written
      */
     virtual void saveAchievementData(const string& steamid64, const string& packName, 
-            const Achievements achvData) throw(runtime_error)= 0;
+            const AchievementPack achvData) throw(runtime_error)= 0;
 };
 
 }

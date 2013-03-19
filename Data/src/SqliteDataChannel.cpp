@@ -49,9 +49,9 @@ void SqliteDataChannel::close() {
     dbObj= NULL;
 }
 
-Achievements SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
+AchievementPack SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
     sqlite3_stmt *stmt;
-    Achievements achvInfo;
+    AchievementPack pack;
     int status;
 
     sqlite3_prepare_v2(dbObj, retrieveQuery.c_str(), retrieveQuery.size(), &stmt, NULL);
@@ -59,17 +59,17 @@ Achievements SqliteDataChannel::retrieveAchievementData(const string& steamid64,
     sqlite3_bind_text(stmt, 2, steamid64.c_str(), steamid64.size(), SQLITE_STATIC);
 
     while((status= sqlite3_step(stmt)) == SQLITE_ROW) {
-        Achievements::Info info= {sqlite3_column_int(stmt, 0), sqlite3_column_int(stmt, 1), sqlite3_column_int(stmt, 2)};
-        achvInfo.insert(info);
+        AchievementPack::Achievement achv= {sqlite3_column_int(stmt, 0), sqlite3_column_int(stmt, 1), sqlite3_column_int(stmt, 2)};
+        pack.insert(achv);
     }
     sqlite3_finalize(stmt);
     if (status != SQLITE_DONE) {
         throw runtime_error("error retrieving saved data");
     }
-    return achvInfo;
+    return pack;
 }
 
-void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const Achievements achvData) throw (runtime_error) {
+void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const AchievementPack achvData) throw (runtime_error) {
     string exceptMsg;
     sqlite3_stmt *addStmt, *insertStmt, *updateStmt;
 
@@ -80,7 +80,7 @@ void SqliteDataChannel::saveAchievementData(const string& steamid64, const strin
         sqlite3_exec(dbObj, "BEGIN TRANSACTION", NULL, NULL, NULL);
         sqlite3_prepare_v2(dbObj, insertData.c_str(), insertData.size(), &insertStmt, NULL);
         sqlite3_prepare_v2(dbObj, updateData.c_str(), updateData.size(), &updateStmt, NULL);
-        for(auto achv: achvData.getInfo()) {
+        for(auto achv: achvData.getAchievements()) {
             UPSERT(insertStmt);
             UPSERT(updateStmt);
         }

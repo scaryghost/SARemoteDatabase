@@ -1,5 +1,5 @@
-#ifndef ETSAI_SAREMOTEDATABASE_SQLITECONNECTION
-#define ETSAI_SAREMOTEDATABASE_SQLITECONNECTION
+#ifndef ETSAI_SAREMOTEDATABASE_SQLITEDATACHANNEL
+#define ETSAI_SAREMOTEDATABASE_SQLITEDATACHANNEL
 
 #ifdef WIN32
 #pragma warning( disable : 4290 )
@@ -17,15 +17,15 @@ public:
 
     virtual void open(const string& dataURL, const string& dataUser, const string& dataPw) throw (runtime_error);
     virtual void close();
-    virtual Achievements retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error);
+    virtual AchievementPack retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error);
     virtual void saveAchievementData(const string& steamid64, const string& packName, 
-            const Achievements achvData) throw(runtime_error);
+            const AchievementPack achvData) throw(runtime_error);
 private:
     sqlite3 *dbObj;
     static string retrieveQuery, insertData, updateData, addPackName, addSteamID64;
 };
 
-}
-}
+}   //namespace saremotedatabase
+}   //namespace etsai
 
 #endif
