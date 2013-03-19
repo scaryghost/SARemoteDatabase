@@ -2,12 +2,14 @@
 #define ETSAI_SAREMOTEDATABASE_ACHIEVEMENTPACK
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace etsai {
 namespace saremotedatabase {
 
 using std::string;
+using std::unordered_map;
 using std::vector;
 
 /**
@@ -27,6 +29,12 @@ public:
      * Constructs a blank achievement pack
      */
     AchievementPack();
+    /**
+     * Constructs an achievement pack from the string representation
+     * @param   data    Serialized representation of the data
+     * @see deserialize
+     */
+    AchievementPack(const string &data);
 
     /**
      * Assignment operator
@@ -58,7 +66,8 @@ public:
     static const char dataSeparator;        ///< Character that separates each achievement state
     static const char achvSeparator;        ///< Character that separates the data within an achievement state
 private:
-    vector<Achievement> achievements;       ///< Set of achievement states
+    vector<Achievement> achievements;           ///< Set of achievement states
+    unordered_map<int, int> achvVectorIndex;    ///< Maps achievement index to vector index
 };
 
 }   //namespace saremotedatabase

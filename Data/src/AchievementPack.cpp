@@ -15,9 +15,11 @@ using std::out_of_range;
 const char AchievementPack::dataSeparator= ';';
 const char AchievementPack::achvSeparator= ',';
 
-static AchievementPack::Achievement blank= {0, 0, 0};
-
 AchievementPack::AchievementPack() {
+}
+
+AchievementPack::AchievementPack(const string &data) {
+    deserialize(data);
 }
 
 AchievementPack& AchievementPack::operator=(const AchievementPack &rhs) {
@@ -28,11 +30,11 @@ AchievementPack& AchievementPack::operator=(const AchievementPack &rhs) {
 }
 
 void AchievementPack::insert(const Achievement& achv) {
-    try {
-        achievements.at(achv.index)= achv;
-    } catch (out_of_range &ex) {
-        achievements.resize(achv.index, blank);
-        achievements.at(achv.index)= achv;
+    if (achvVectorIndex.count(achv.index) == 0) {
+        achievements.push_back(achv);
+        achvVectorIndex[achv.index]= achievements.size() - 1;
+    } else {
+        achievements[achvVectorIndex[achv.index]]= achv;
     }
 }
 
