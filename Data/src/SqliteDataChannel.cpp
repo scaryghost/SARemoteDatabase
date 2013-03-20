@@ -3,6 +3,7 @@
 #endif
 
 #include "Data/src/SqliteDataChannel.h"
+#include "Data/AchievementPack.h"
 
 #include <exception>
 
@@ -49,7 +50,7 @@ void SqliteDataChannel::close() {
     dbObj= NULL;
 }
 
-AchievementPack SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
+string SqliteDataChannel::retrieveAchievementData(const string& steamid64, const string& packName) throw (runtime_error) {
     sqlite3_stmt *stmt;
     AchievementPack pack;
     int status;
@@ -66,10 +67,11 @@ AchievementPack SqliteDataChannel::retrieveAchievementData(const string& steamid
     if (status != SQLITE_DONE) {
         throw runtime_error("error retrieving saved data");
     }
-    return pack;
+    return pack.serialize();
 }
 
-void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const AchievementPack achvData) throw (runtime_error) {
+void SqliteDataChannel::saveAchievementData(const string& steamid64, const string& packName, const string achvData)throw (runtime_error) {
+    AchievementPack pack(achvData);
     string exceptMsg;
     sqlite3_stmt *addStmt, *insertStmt, *updateStmt;
 
@@ -80,7 +82,7 @@ void SqliteDataChannel::saveAchievementData(const string& steamid64, const strin
         sqlite3_exec(dbObj, "BEGIN TRANSACTION", NULL, NULL, NULL);
         sqlite3_prepare_v2(dbObj, insertData.c_str(), insertData.size(), &insertStmt, NULL);
         sqlite3_prepare_v2(dbObj, updateData.c_str(), updateData.size(), &updateStmt, NULL);
-        for(auto achv: achvData.getAchievements()) {
+        for(auto achv: pack.getAchievements()) {
             UPSERT(insertStmt);
             UPSERT(updateStmt);
         }

@@ -8,8 +8,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "Data/AchievementPack.h"
-
 namespace etsai {
 namespace saremotedatabase {
 
@@ -38,9 +36,10 @@ public:
      * Retrieves the achievement data for the specified player and achievement pack
      * @param   steamid64           Player's steamid64 to lookup
      * @param   packName            Achievement pack name to lookup
+     * @return  Serialized achievement data
      * @throw   runtime_error       If an error occured during the retrieval
      */
-    virtual AchievementPack retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error)= 0;
+    virtual string retrieveAchievementData(const string& steamid64, const string& packName) throw(runtime_error)= 0;
     /**
      * Save the achievement data
      * @param   steamid64           Owner's steamid64
@@ -48,8 +47,7 @@ public:
      * @param   achvData            Achievement data to store
      * @throw   runtime_error       If the data was unable to be written
      */
-    virtual void saveAchievementData(const string& steamid64, const string& packName, 
-            const AchievementPack achvData) throw(runtime_error)= 0;
+    virtual void saveAchievementData(const string& steamid64, const string& packName, const string achvData) throw(runtime_error)= 0;
 };
 
 }

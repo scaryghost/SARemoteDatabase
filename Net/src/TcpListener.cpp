@@ -53,9 +53,9 @@ void handler(shared_ptr<Socket> socket, shared_ptr<DataChannel> dataChnl, shared
                 }
                 break;
             case Message::RETRIEVE:
-                SAVE_OR_RETRIEVE(3, body= (dataChnl->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1))).serialize());
+                SAVE_OR_RETRIEVE(3, body= (dataChnl->retrieveAchievementData(bodyParts.at(0), bodyParts.at(1))));
             case Message::SAVE:
-                SAVE_OR_RETRIEVE(2, dataChnl->saveAchievementData(bodyParts.at(0), bodyParts.at(1), AchievementPack(bodyParts.at(2))));
+                SAVE_OR_RETRIEVE(2, dataChnl->saveAchievementData(bodyParts.at(0), bodyParts.at(1), bodyParts.at(2)));
             default:
                 global::logger->log(Level::INFO, "Unrecognized request");
                 body= "Unrecognized request";
