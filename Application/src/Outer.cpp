@@ -70,10 +70,8 @@ static BOOL ctrlHandler(DWORD fdwCtrlType) {
 #endif
 
 void start(Properties &serverProps) {
-    stringstream msg;
-    msg << "Listening on tcp port: " << serverProps.port;
-    global::logger->log(Level::CONFIG, "Achievement data URL: " + serverProps.dataURL);
-    global::logger->log(Level::CONFIG, msg.str());
+    global::logger->log(Level::CONFIG, "Achievement data URL: %s", serverProps.dataURL);
+    global::logger->log(Level::CONFIG, "Listening on tcp port: %d", port);
 
     if (!channelCreator) {
         dataChnl.reset(new SqliteDataChannel());
@@ -87,7 +85,7 @@ void start(Properties &serverProps) {
         shared_ptr<Socket> client(server.accept());
         shared_ptr<time_point<system_clock> > lastActiveTime(new time_point<system_clock>);
 
-        global::logger->log(Level::INFO, "Received connection from " + client->getAddressPort());
+        global::logger->log(Level::INFO, "Received connection from %s", client->getAddressPort());
 
         thread th(tcplistener::handler, client, dataChnl, lastActiveTime, serverProps.password);
         thread th2(tcplistener::timeout, client, lastActiveTime, serverProps.timeout);
