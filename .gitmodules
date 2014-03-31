@@ -1,3 +1,6 @@
 [submodule "CppUtilities"]
 	path = CppUtilities
 	url = git@github.com:scaryghost/CppUtilities.git
+[submodule "ToolBuild"]
+	path = ToolBuild
+	url = git@github.com:scaryghost/ToolBuild.git
