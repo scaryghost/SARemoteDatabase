@@ -13,11 +13,10 @@ using std::stringstream;
 const string Message::PROTOCOL= "server-achievements";
 const int Message::VERSION= 1;
 
-
 Message Message::parse(const string& msg) {
     Message msgObj;
-    Type type;
-    Request request;
+    Type type= UNKNOWN_TYPE;
+    Request request= UNKNOWN_REQUEST;
     int status= -1;
 
     auto parts= utility::split(msg, '|');

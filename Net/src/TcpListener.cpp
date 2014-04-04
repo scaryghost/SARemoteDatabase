@@ -70,10 +70,10 @@ void handler(shared_ptr<Socket> socket, shared_ptr<DataChannel> dataChnl, shared
     };
 
     try {
-        global::logger->log(Level::INFO, "Waiting for a request from " + socket->getAddressPort());
+        global::logger->log(Level::INFO, "Waiting for a request from %s", socket->getAddressPort().c_str());
         while(!terminate && (line= socket->readLine()) != "") {
             try {
-                global::logger->log(Level::INFO,"%s - request= %s", socket->getAddressPort(), line);
+                global::logger->log(Level::INFO,"%s - request= %s", socket->getAddressPort().c_str(), line.c_str());
                 process(Message::parse(line));
                 if (authenticated && !pendingRequests.empty()) {
                     for(Message &msg: pendingRequests) {
@@ -91,7 +91,7 @@ void handler(shared_ptr<Socket> socket, shared_ptr<DataChannel> dataChnl, shared
 
     if (!socket->isClosed()) {
         socket->close();
-        global::logger->log(Level::INFO, "Connection to %s closed", socket->getAddressPort());
+        global::logger->log(Level::INFO, "Connection to %s closed", socket->getAddressPort().c_str());
     }
 }
 
@@ -116,7 +116,7 @@ void timeout(shared_ptr<Socket> socket, shared_ptr<time_point<system_clock> > la
         
     }
     if (timeout > 0 && !socket->isClosed()) {
-        global::logger->log(Level::INFO, "Max idle time reached, force closing the connection from %s", socket->getAddressPort());
+        global::logger->log(Level::INFO, "Max idle time reached, force closing the connection from %s", socket->getAddressPort().c_str());
         socket->close();
     }
 }
