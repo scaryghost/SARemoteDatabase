@@ -1,0 +1,5 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="SARemoteDatabase" basedir="." >
+    <property name="tool.build.dir" value="ToolBuild" />
+    <description>Builds, tests, and runs the project CppUtilities.</description>
+    <import file="${tool.build.dir}/ivybuild.xml" />
+</project>

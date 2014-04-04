@@ -1,4 +1,7 @@
 MODULES:=Application Core Data Net
 APP_NAME:=saremotedatabase
+EXT_LIBS_DIR:=extlibs
 INC_DIRS:=.
-LIB_NAMES:=pthread dl cpputils sqlite3
+STATIC_LIBS:=cpputils
+DYNAMIC_LIBS:=pthread dl sqlite3
+C_FLAGS=-std=c++0x -Wall -Werror

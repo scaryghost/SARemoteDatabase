@@ -1,0 +1,3 @@
+<ivysettings>
+    <include file="${user.home}/.ivysettings.xml" />
+</ivysettings>

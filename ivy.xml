@@ -1,0 +1,13 @@
+<ivy-module version="2.3">
+    <info organisation="com.github.etsai" module="saremotedb"/>
+    <configurations defaultconf="run">
+    	<conf name="build" description="Only use for build rules" />
+        <conf name="run" description="Use for runtime dependency" />
+    </configurations>
+    <publications>
+        <artifact name="saremotedb" ext="tar.gz" />
+    </publications>
+    <dependencies>
+        <dependency org="com.github.etsai" name="cpputils" rev="1.0.10" conf="run"/>
+    </dependencies>
+</ivy-module>
