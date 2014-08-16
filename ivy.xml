@@ -8,7 +8,9 @@
         <artifact name="saremotedb-linux" conf="linux" ext="tar.gz" />
         <artifact name="saremotedb-windows" conf="windows" ext="zip" />
     </publications>
-    <dependencies defaultconf="${ivy.configurations}">
-        <dependency org="com.github.etsai" name="cpputils" rev="1.0.12" />
+    <dependencies>
+        <dependency org="com.github.etsai" name="cpputils" rev="1.0.12" >
+            <artifact name="cpputils-linux" conf="linux->linux" ext="tar.gz"/>
+        </dependency>
     </dependencies>
 </ivy-module>
